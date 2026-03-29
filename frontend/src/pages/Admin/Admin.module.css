@@ -1,0 +1,195 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.tabActive {
+  background: var(--bg-card);
+  color: var(--neon-pink);
+  box-shadow: 0 0 10px var(--neon-pink-glow);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Order cards */
+.orderCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.orderId {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--neon-blue);
+}
+
+.orderDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orderRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.comment {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--neon-blue);
+}
+
+.orderActions {
+  display: flex;
+  gap: 8px;
+}
+
+.rejectForm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rejectNote {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--neon-orange);
+  background: rgba(255, 107, 43, 0.1);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+}
+
+/* User cards */
+.userCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.userHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gradient-ocean);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.userName {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.youBadge {
+  font-size: 0.75rem;
+  color: var(--neon-purple);
+}
+
+.userUsername {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.userId {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.roleRow {
+  display: flex;
+  gap: 6px;
+}
+
+/* Unpaid cards */
+.unpaidCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unpaidHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.unpaidName {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.unpaidMeta {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}

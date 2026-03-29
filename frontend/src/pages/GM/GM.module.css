@@ -1,0 +1,122 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.typeButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.sessionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Signup cards */
+.signupCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.signupUser {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.waitlistPos {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--neon-yellow);
+}
+
+.signupActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Attendance cards */
+.attCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attName {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.attActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

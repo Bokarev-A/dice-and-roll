@@ -1,0 +1,20 @@
+/* ── Telegram WebApp overrides ────────────────────────────────── */
+body {
+  --tg-theme-bg-color: #0a0a1a;
+  --tg-theme-secondary-bg-color: #12122a;
+  --tg-theme-text-color: #e8e8ff;
+  --tg-theme-hint-color: #8888bb;
+  --tg-theme-link-color: #00d4ff;
+  --tg-theme-button-color: #ff2d95;
+  --tg-theme-button-text-color: #ffffff;
+}
+
+/* Fix Telegram scroll */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+/* Safe areas for notch phones */
+.app-container {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}

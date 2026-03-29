@@ -1,0 +1,95 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.tabActive {
+  background: var(--bg-card);
+  color: var(--neon-pink);
+  box-shadow: 0 0 10px var(--neon-pink-glow);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oneshotCard {
+  cursor: pointer;
+}
+
+.oneshotHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.oneshotDate {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--neon-blue);
+  margin-right: 8px;
+}
+
+.oneshotTime {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.spots {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--neon-green);
+  background: rgba(57, 255, 20, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(57, 255, 20, 0.3);
+}
+
+.oneshotTitle {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.system {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--neon-purple);
+  margin-bottom: 8px;
+}
+
+.oneshotMeta {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

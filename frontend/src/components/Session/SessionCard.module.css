@@ -1,0 +1,64 @@
+.session {
+  cursor: pointer;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.day {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--neon-blue);
+}
+
+.time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.room {
+  color: var(--text-secondary);
+}
+
+.spots {
+  color: var(--text-secondary);
+}
+
+.spotsLeft {
+  color: var(--neon-green);
+}
+
+.waitlist {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--neon-yellow);
+}

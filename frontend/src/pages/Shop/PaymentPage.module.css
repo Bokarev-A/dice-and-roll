@@ -1,0 +1,108 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.orderCard {
+  text-align: center;
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.orderId {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.amount {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--neon-pink);
+  text-shadow: 0 0 20px var(--neon-pink-glow);
+  margin-bottom: 12px;
+}
+
+.comment {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.commentValue {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--neon-blue);
+  background: var(--bg-input);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-top: 6px;
+  user-select: all;
+}
+
+.qrCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qrInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qrRow {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.instructions strong {
+  color: var(--neon-blue);
+}
+
+.waitingCard,
+.successCard,
+.rejectCard {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.waitingIcon,
+.successIcon,
+.rejectIcon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.waitingText,
+.successText,
+.rejectText {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
