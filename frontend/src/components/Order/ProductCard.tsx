@@ -5,13 +5,19 @@ import styles from './ProductCard.module.css';
 interface ProductCardProps {
   product: Product;
   onBuy: (product: Product) => void;
+  basePrice?: number;
 }
 
-export function ProductCard({ product, onBuy }: ProductCardProps) {
+export function ProductCard({ product, onBuy, basePrice = 700 }: ProductCardProps) {
   const perGame = product.price / product.credits;
   const discount = product.credits > 1
-    ? Math.round((1 - perGame / 700) * 100)
+    ? Math.round((1 - perGame / basePrice) * 100)
     : 0;
+
+  //const label = product.category === 'gm_room' ? 'аренд' : 'игр';
+  const pluralLabel = product.credits === 1
+    ? (product.category === 'gm_room' ? 'аренда' : 'игра')
+    : pluralGames(product.credits);
 
   return (
     <div className={`card ${styles.product}`}>
@@ -25,7 +31,7 @@ export function ProductCard({ product, onBuy }: ProductCardProps) {
       <div className={styles.details}>
         <div className={styles.credits}>
           <span className={styles.creditsValue}>{product.credits}</span>
-          <span className={styles.creditsLabel}>{pluralGames(product.credits)}</span>
+          <span className={styles.creditsLabel}>{pluralLabel}</span>
         </div>
 
         {product.duration_months && (
@@ -38,7 +44,7 @@ export function ProductCard({ product, onBuy }: ProductCardProps) {
       <div className={styles.priceRow}>
         <div className={styles.price}>{formatPrice(product.price)}</div>
         <div className={styles.perGame}>
-          {formatPrice(Math.round(perGame))} / игра
+          {formatPrice(Math.round(perGame))} / {product.category === 'gm_room' ? 'игра' : 'игра'}
         </div>
       </div>
 

@@ -20,7 +20,7 @@ async def list_products(
     result = await db.execute(
         select(Product)
         .where(Product.is_active == True)  # noqa: E712
-        .order_by(Product.credits.asc())
+        .order_by(Product.category.asc(), Product.credits.asc())
     )
     return result.scalars().all()
 
@@ -37,6 +37,7 @@ async def create_product(
         price=data.price,
         credits=data.credits,
         duration_months=data.duration_months,
+        category=data.category,
         is_active=True,
     )
     db.add(product)

@@ -24,6 +24,7 @@ export type Product = {
   price: number;
   credits: number;
   duration_months?: number;
+  category: string;
   is_active: boolean;
   created_at: string;
 };

@@ -6,48 +6,90 @@ from sqlalchemy import select
 
 
 PRODUCTS = [
+    # ── Игроки ──
     {
         "name": "Разовая игра",
         "price": 700.00,
         "credits": 1,
         "duration_months": None,
+        "category": "player",
     },
     {
         "name": "Абонемент 4 игры",
         "price": 2395.00,
         "credits": 4,
         "duration_months": 2,
+        "category": "player",
     },
     {
         "name": "Абонемент 8 игр",
         "price": 4715.00,
         "credits": 8,
         "duration_months": 3,
+        "category": "player",
     },
     {
         "name": "Абонемент 12 игр",
         "price": 6915.00,
         "credits": 12,
         "duration_months": 4,
+        "category": "player",
     },
     {
         "name": "Абонемент 16 игр",
         "price": 8850.00,
         "credits": 16,
         "duration_months": 5,
+        "category": "player",
     },
     {
         "name": "Абонемент 20 игр",
         "price": 9955.00,
         "credits": 20,
         "duration_months": 7,
+        "category": "player",
+    },
+    # ── Аренда комнат для ГМ ──
+    {
+        "name": "Разовая аренда",
+        "price": 2500.00,
+        "credits": 1,
+        "duration_months": None,
+        "category": "gm_room",
+    },
+    {
+        "name": "Разовая аренда (новый мастер, -20%)",
+        "price": 2000.00,
+        "credits": 1,
+        "duration_months": None,
+        "category": "gm_room",
+    },
+    {
+        "name": "Мастерский абонемент 4 игры",
+        "price": 7000.00,
+        "credits": 4,
+        "duration_months": 2,
+        "category": "gm_room",
+    },
+    {
+        "name": "Мастерский абонемент 8 игр",
+        "price": 11000.00,
+        "credits": 8,
+        "duration_months": 3,
+        "category": "gm_room",
+    },
+    {
+        "name": "Мастерский абонемент 12 игр",
+        "price": 14000.00,
+        "credits": 12,
+        "duration_months": 4,
+        "category": "gm_room",
     },
 ]
 
 
 async def seed():
     async with async_session() as db:
-        # Check if products already exist
         result = await db.execute(select(Product))
         existing = result.scalars().all()
         if existing:
@@ -59,7 +101,7 @@ async def seed():
         for p in PRODUCTS:
             product = Product(**p, is_active=True)
             db.add(product)
-            print(f"  + {p['name']} — {p['price']}₽ / {p['credits']} кредитов")
+            print(f"  + [{p['category']}] {p['name']} — {p['price']}₽ / {p['credits']} кр.")
 
         await db.commit()
         print(f"\n✅ Added {len(PRODUCTS)} products!")

@@ -4,6 +4,34 @@
   gap: 16px;
 }
 
+.tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--surface-dark);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabActive {
+  background: var(--surface-light);
+  color: var(--neon-blue);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+}
+
 .subtitle {
   font-family: var(--font-body);
   font-size: 0.95rem;

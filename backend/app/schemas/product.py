@@ -9,6 +9,7 @@ class ProductCreate(BaseModel):
     price: float
     credits: int
     duration_months: Optional[int] = None
+    category: str = "player"
 
 
 class ProductRead(BaseModel):
@@ -17,6 +18,7 @@ class ProductRead(BaseModel):
     price: float
     credits: int
     duration_months: Optional[int] = None
+    category: str = "player"
     is_active: bool
     created_at: datetime
 

@@ -8,12 +8,15 @@ import { Loader } from '../../components/UI/Loader';
 import { useUIStore } from '../../store/useUIStore';
 import styles from './ShopPage.module.css';
 
+type Tab = 'player' | 'gm_room';
+
 export function ShopPage() {
   const navigate = useNavigate();
   const showToast = useUIStore((s) => s.showToast);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
+  const [tab, setTab] = useState<Tab>('player');
 
   useEffect(() => {
     async function load() {
@@ -46,14 +49,37 @@ export function ShopPage() {
 
   if (loading) return <Loader />;
 
+  const filtered = products.filter((p) => p.category === tab);
+  const basePrice = tab === 'player' ? 700 : 2500;
+
   return (
     <div className={`animate-fade-in ${styles.page}`}>
       <h1>Магазин</h1>
-      <p className={styles.subtitle}>Выберите абонемент для игр</p>
+
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${tab === 'player' ? styles.tabActive : ''}`}
+          onClick={() => setTab('player')}
+        >
+          🎮 Для игроков
+        </button>
+        <button
+          className={`${styles.tab} ${tab === 'gm_room' ? styles.tabActive : ''}`}
+          onClick={() => setTab('gm_room')}
+        >
+          🎲 Для мастеров
+        </button>
+      </div>
+
+      <p className={styles.subtitle}>
+        {tab === 'player'
+          ? 'Абонементы на игры'
+          : 'Аренда комнат для проведения игр'}
+      </p>
 
       <div className={styles.list}>
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} onBuy={handleBuy} />
+        {filtered.map((p) => (
+          <ProductCard key={p.id} product={p} onBuy={handleBuy} basePrice={basePrice} />
         ))}
       </div>
     </div>
