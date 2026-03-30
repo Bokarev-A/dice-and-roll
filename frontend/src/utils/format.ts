@@ -20,7 +20,15 @@ export function formatTime(dateStr: string): string {
 }
 
 export function formatDateTime(dateStr: string): string {
-  return `${formatDate(dateStr)} ${formatTime(dateStr)}`;
+  const date = new Date(dateStr);
+  return date.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: TIMEZONE,
+  });
 }
 
 export function formatPrice(price: number): string {

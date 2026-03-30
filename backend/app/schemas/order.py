@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, field_serializer
 
 from app.models.order import OrderStatus
 
@@ -26,8 +26,15 @@ class OrderRead(BaseModel):
     paid_at: Optional[datetime] = None
     confirmed_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+    @field_serializer('created_at', 'paid_at', 'confirmed_at')
+    def serialize_dt(self, dt: Optional[datetime]) -> Optional[str]:
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
     @model_validator(mode="before")
     @classmethod
