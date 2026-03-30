@@ -50,7 +50,9 @@ export function HomePage() {
 
       {/* Balance */}
       <BalanceCard
-        total={balance?.total_available || 0}
+        totalCredits={balance?.total_credits || 0}
+        totalRentals={balance?.total_rentals || 0}
+        showRentals={user?.role === 'gm' || user?.role === 'admin'}
         onClick={() => navigate('/profile')}
       />
 

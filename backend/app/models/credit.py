@@ -13,6 +13,12 @@ class CreditBatchStatus(str, enum.Enum):
     expired = "expired"
 
 
+
+class CreditBatchType(str, enum.Enum):
+    credit = "credit"
+    rental = "rental"
+
+
 class CreditBatch(Base):
     __tablename__ = "credit_batches"
 
@@ -22,6 +28,9 @@ class CreditBatch(Base):
     )
     order_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("orders.id"), unique=True, nullable=False
+    )
+    batch_type: Mapped[str] = mapped_column(
+        SAEnum(CreditBatchType), default=CreditBatchType.credit, nullable=False
     )
     total: Mapped[int] = mapped_column(Integer, nullable=False)
     remaining: Mapped[int] = mapped_column(Integer, nullable=False)

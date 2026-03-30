@@ -43,6 +43,8 @@ export function ProfilePage() {
 
   if (loading) return <Loader />;
 
+  const showRentals = user?.role === 'gm' || user?.role === 'admin';
+
   return (
     <div className={`animate-fade-in ${styles.page}`}>
       {/* Profile header */}
@@ -64,7 +66,11 @@ export function ProfilePage() {
       </div>
 
       {/* Balance */}
-      <BalanceCard total={balance?.total_available || 0} />
+      <BalanceCard
+        totalCredits={balance?.total_credits || 0}
+        totalRentals={balance?.total_rentals || 0}
+        showRentals={showRentals}
+      />
 
       {/* Tabs */}
       <div className={styles.tabs}>
@@ -82,10 +88,11 @@ export function ProfilePage() {
       {/* Credits tab */}
       {tab === 'credits' && balance && (
         <div className={styles.list}>
-          {balance.batches.length === 0 ? (
+          <h3>💎 Кредиты</h3>
+          {balance.credit_batches.length === 0 ? (
             <p className={styles.empty}>Нет активных кредитов</p>
           ) : (
-            balance.batches.map((b) => (
+            balance.credit_batches.map((b) => (
               <div key={b.id} className={`card ${styles.batchCard}`}>
                 <div className={styles.batchHeader}>
                   <span className={styles.batchCredits}>
@@ -103,6 +110,34 @@ export function ProfilePage() {
                 </div>
               </div>
             ))
+          )}
+
+          {showRentals && (
+            <>
+              <h3 style={{ marginTop: '1rem' }}>🏠 Аренды</h3>
+              {balance.rental_batches.length === 0 ? (
+                <p className={styles.empty}>Нет активных аренд</p>
+              ) : (
+                balance.rental_batches.map((b) => (
+                  <div key={b.id} className={`card ${styles.batchCard}`}>
+                    <div className={styles.batchHeader}>
+                      <span className={styles.batchCredits}>
+                        {b.remaining}/{b.total}
+                      </span>
+                      <span className={`badge badge-${b.status === 'active' ? 'green' : 'orange'}`}>
+                        {b.status}
+                      </span>
+                    </div>
+                    <div className={styles.batchMeta}>
+                      Куплено: {formatDate(b.purchased_at)}
+                      {b.expires_at && (
+                        <> · Истекает: {formatDate(b.expires_at)}</>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
           )}
 
           <button

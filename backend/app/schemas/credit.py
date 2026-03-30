@@ -3,13 +3,14 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.models.credit import CreditBatchStatus
+from app.models.credit import CreditBatchStatus, CreditBatchType
 from app.models.ledger import LedgerType
 
 
 class CreditBatchRead(BaseModel):
     id: int
     order_id: int
+    batch_type: CreditBatchType
     total: int
     remaining: int
     status: CreditBatchStatus
@@ -21,8 +22,10 @@ class CreditBatchRead(BaseModel):
 
 
 class CreditBalanceRead(BaseModel):
-    total_available: int
-    batches: List[CreditBatchRead]
+    total_credits: int
+    total_rentals: int
+    credit_batches: List[CreditBatchRead]
+    rental_batches: List[CreditBatchRead]
 
 
 class LedgerEntryRead(BaseModel):

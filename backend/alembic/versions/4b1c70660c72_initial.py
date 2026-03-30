@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: ceb6d4868bb9
+Revision ID: 4b1c70660c72
 Revises: 
-Create Date: 2026-03-27 12:17:33.190155
+Create Date: 2026-03-30 15:44:44.122184
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ceb6d4868bb9'
+revision: str = '4b1c70660c72'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,6 +26,7 @@ def upgrade() -> None:
     sa.Column('price', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('credits', sa.Integer(), nullable=False),
     sa.Column('duration_months', sa.Integer(), nullable=True),
+    sa.Column('category', sa.String(length=50), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -98,6 +99,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('order_id', sa.Integer(), nullable=False),
+    sa.Column('batch_type', sa.Enum('credit', 'rental', name='creditbatchtype'), nullable=False),
     sa.Column('total', sa.Integer(), nullable=False),
     sa.Column('remaining', sa.Integer(), nullable=False),
     sa.Column('status', sa.Enum('active', 'exhausted', 'expired', name='creditbatchstatus'), nullable=False),

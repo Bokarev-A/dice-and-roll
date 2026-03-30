@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.credit import CreditBatch, CreditBatchStatus
+from app.models.credit import CreditBatch, CreditBatchStatus, CreditBatchType
 from app.models.ledger import LedgerEntry, LedgerType
 from app.models.order import Order
 
@@ -23,9 +23,15 @@ async def grant_credits(db: AsyncSession, order: Order) -> Optional[CreditBatch]
         base_time = order.confirmed_at or datetime.now(timezone.utc)
         expires_at = base_time + relativedelta(months=order.duration_months)
 
+    # Determine batch type from product category
+    from app.models.product import Product
+    product = await db.get(Product, order.product_id)
+    batch_type = CreditBatchType.rental if (product and product.category == "gm_room") else CreditBatchType.credit
+
     batch = CreditBatch(
         user_id=order.user_id,
         order_id=order.id,
+        batch_type=batch_type,
         total=order.credits_count,
         remaining=order.credits_count,
         status=CreditBatchStatus.active,

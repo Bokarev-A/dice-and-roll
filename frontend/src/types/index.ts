@@ -69,6 +69,7 @@ export type CreditBatchStatus = 'active' | 'exhausted' | 'expired';
 export type CreditBatch = {
   id: number;
   order_id: number;
+  batch_type: 'credit' | 'rental';
   total: number;
   remaining: number;
   status: CreditBatchStatus;
@@ -77,8 +78,10 @@ export type CreditBatch = {
 };
 
 export type CreditBalance = {
-  total_available: number;
-  batches: CreditBatch[];
+  total_credits: number;
+  total_rentals: number;
+  credit_batches: CreditBatch[];
+  rental_batches: CreditBatch[];
 };
 
 export type LedgerType = 'debit' | 'refund';

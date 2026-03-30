@@ -4,12 +4,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
+from app.models.credit import CreditBatchType
 from app.models.ledger import LedgerEntry
 from app.schemas.credit import CreditBalanceRead, CreditBatchRead, LedgerEntryRead
 from app.api.deps import get_current_user
-from app.services.credit_service import get_available_batches, get_total_credits
+from app.services.credit_service import get_available_batches
 
 router = APIRouter(prefix="/credits", tags=["credits"])
+
+
+def _build_balance_response(batches) -> CreditBalanceRead:
+    credit_batches = [b for b in batches if b.batch_type == CreditBatchType.credit]
+    rental_batches = [b for b in batches if b.batch_type == CreditBatchType.rental]
+
+    return CreditBalanceRead(
+        total_credits=sum(b.remaining for b in credit_batches),
+        total_rentals=sum(b.remaining for b in rental_batches),
+        credit_batches=[CreditBatchRead.model_validate(b) for b in credit_batches],
+        rental_batches=[CreditBatchRead.model_validate(b) for b in rental_batches],
+    )
 
 
 @router.get("/balance", response_model=CreditBalanceRead)
@@ -19,12 +32,7 @@ async def get_balance(
 ):
     """Get current user's credit balance with batch breakdown."""
     batches = await get_available_batches(db, current_user.id)
-    total = sum(b.remaining for b in batches)
-
-    return CreditBalanceRead(
-        total_available=total,
-        batches=[CreditBatchRead.model_validate(b) for b in batches],
-    )
+    return _build_balance_response(batches)
 
 
 @router.get("/history", response_model=list[LedgerEntryRead])
@@ -64,9 +72,4 @@ async def get_user_balance(
         )
 
     batches = await get_available_batches(db, user_id)
-    total = sum(b.remaining for b in batches)
-
-    return CreditBalanceRead(
-        total_available=total,
-        batches=[CreditBatchRead.model_validate(b) for b in batches],
-    )
+    return _build_balance_response(batches)

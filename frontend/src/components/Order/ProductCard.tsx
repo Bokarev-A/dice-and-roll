@@ -14,7 +14,6 @@ export function ProductCard({ product, onBuy, basePrice = 700 }: ProductCardProp
     ? Math.round((1 - perGame / basePrice) * 100)
     : 0;
 
-  //const label = product.category === 'gm_room' ? 'аренд' : 'игр';
   const pluralLabel = product.credits === 1
     ? (product.category === 'gm_room' ? 'аренда' : 'игра')
     : pluralGames(product.credits);
