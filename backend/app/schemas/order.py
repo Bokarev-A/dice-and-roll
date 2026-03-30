@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.models.order import OrderStatus
 
@@ -14,6 +14,7 @@ class OrderRead(BaseModel):
     id: int
     user_id: int
     product_id: int
+    product_name: str = ""
     amount: float
     credits_count: int
     duration_months: Optional[int] = None
@@ -27,6 +28,13 @@ class OrderRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_product_name(cls, data):
+        if hasattr(data, "product") and data.product:
+            data.product_name = data.product.name
+        return data
 
 
 class OrderReject(BaseModel):

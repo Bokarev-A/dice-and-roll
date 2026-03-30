@@ -47,6 +47,15 @@
   user-select: all;
 }
 
+.copyLink {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--neon-blue);
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .qrCard {
   display: flex;
   flex-direction: column;

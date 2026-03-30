@@ -15,6 +15,7 @@ export function PaymentPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [qr, setQR] = useState<QRPaymentInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -34,6 +35,17 @@ export function PaymentPage() {
     }
     load();
   }, [orderId, navigate]);
+
+  async function handleCopyComment(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      showToast('Скопировано!', 'success');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast('Не удалось скопировать', 'error');
+    }
+  }
 
   async function handleMarkPaid() {
     if (!order) return;
@@ -69,13 +81,8 @@ export function PaymentPage() {
           <span className={styles.orderId}>Заказ #{order.id}</span>
           <OrderBadge status={order.status} />
         </div>
-
         <div className={styles.amount}>{formatPrice(order.amount)}</div>
-
-        <div className={styles.comment}>
-          Комментарий к переводу:
-          <div className={styles.commentValue}>{order.payment_comment}</div>
-        </div>
+        <div className={styles.productName}>{order.product_name}</div>
       </div>
 
       {order.status === 'pending' && qr && (
@@ -100,7 +107,15 @@ export function PaymentPage() {
             <div className={styles.instructions}>
               <p>1. Отсканируйте QR-код или нажмите кнопку ниже</p>
               <p>2. Переведите <strong>{formatPrice(qr.amount)}</strong></p>
-              <p>3. В комментарии укажите: <strong>{qr.payment_comment}</strong></p>
+              <p>
+                3. В комментарии укажите: <strong>{qr.payment_comment}</strong>{' '}
+                <span
+                  className={styles.copyLink}
+                  onClick={() => handleCopyComment(qr.payment_comment)}
+                >
+                  ({copied ? '✓ Скопировано' : 'Копировать'})
+                </span>
+              </p>
               <p>4. Нажмите «Я оплатил»</p>
             </div>
 

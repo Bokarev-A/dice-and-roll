@@ -69,10 +69,15 @@ async def get_available_batches(
     batches = list(result.scalars().all())
 
     # Filter out expired
-    return [
-        b for b in batches
-        if b.expires_at is None or b.expires_at > now
-    ]
+    def is_valid(b: CreditBatch) -> bool:
+        if b.expires_at is None:
+            return True
+        exp = b.expires_at
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        return exp > now
+
+    return [b for b in batches if is_valid(b)]
 
 
 async def get_total_credits(db: AsyncSession, user_id: int) -> int:
@@ -161,7 +166,10 @@ async def refund_credit(
     batch = result.scalar_one_or_none()
     if batch:
         now = datetime.now(timezone.utc)
-        if batch.expires_at is None or batch.expires_at > now:
+        exp = batch.expires_at
+        if exp is not None and exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        if exp is None or exp > now:
             batch.remaining += 1
             if batch.status == CreditBatchStatus.exhausted:
                 batch.status = CreditBatchStatus.active

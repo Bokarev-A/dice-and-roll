@@ -41,6 +41,7 @@ export type Order = {
   id: number;
   user_id: number;
   product_id: number;
+  product_name: string;
   amount: number;
   credits_count: number;
   duration_months?: number;
