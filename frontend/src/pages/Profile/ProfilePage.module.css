@@ -76,6 +76,22 @@
   gap: 10px;
 }
 
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  margin-top: 0.5rem;
+}
+
+.emoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 1.1rem;
+}
+
 .empty {
   text-align: center;
   font-family: var(--font-body);
@@ -166,6 +182,13 @@
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--neon-green);
+}
+
+.gmReward {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-gold, #f0c040);
 }
 
 .historyDate {

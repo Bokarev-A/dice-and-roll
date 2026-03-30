@@ -65,11 +65,13 @@ export type QRPaymentInfo = {
 };
 
 export type CreditBatchStatus = 'active' | 'exhausted' | 'expired';
+export type CreditBatchType = 'credit' | 'rental' | 'gm_reward';
 
 export type CreditBatch = {
   id: number;
-  order_id: number;
-  batch_type: 'credit' | 'rental';
+  order_id?: number;
+  session_id?: number;
+  batch_type: CreditBatchType;
   total: number;
   remaining: number;
   status: CreditBatchStatus;
@@ -80,11 +82,13 @@ export type CreditBatch = {
 export type CreditBalance = {
   total_credits: number;
   total_rentals: number;
+  total_gm_rewards: number;
   credit_batches: CreditBatch[];
   rental_batches: CreditBatch[];
+  gm_reward_batches: CreditBatch[];
 };
 
-export type LedgerType = 'debit' | 'refund';
+export type LedgerType = 'debit' | 'refund' | 'gm_reward';
 
 export type LedgerEntry = {
   id: number;
@@ -98,12 +102,14 @@ export type LedgerEntry = {
 };
 
 export type CampaignType = 'campaign' | 'oneshot';
+export type CampaignFunding = 'club' | 'private';
 export type CampaignVisibility = 'public' | 'link';
 export type CampaignStatus = 'active' | 'archived';
 
 export type Campaign = {
   id: number;
   type: CampaignType;
+  funding: CampaignFunding;
   title: string;
   system?: string;
   description?: string;

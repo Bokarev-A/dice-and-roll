@@ -43,7 +43,8 @@ export function ProfilePage() {
 
   if (loading) return <Loader />;
 
-  const showRentals = user?.role === 'gm' || user?.role === 'admin';
+  const isGmOrAdmin = user?.role === 'gm' || user?.role === 'admin';
+  const hasGmRewards = (balance?.total_gm_rewards || 0) > 0;
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
@@ -69,7 +70,9 @@ export function ProfilePage() {
       <BalanceCard
         totalCredits={balance?.total_credits || 0}
         totalRentals={balance?.total_rentals || 0}
-        showRentals={showRentals}
+        totalGmRewards={balance?.total_gm_rewards || 0}
+        showRentals={isGmOrAdmin}
+        showGmRewards={isGmOrAdmin || hasGmRewards}
       />
 
       {/* Tabs */}
@@ -88,7 +91,9 @@ export function ProfilePage() {
       {/* Credits tab */}
       {tab === 'credits' && balance && (
         <div className={styles.list}>
-          <h3>💎 Кредиты</h3>
+          <h3 className={styles.sectionTitle}>
+            <span className={styles.emoji}>💎</span> КРЕДИТЫ
+          </h3>
           {balance.credit_batches.length === 0 ? (
             <p className={styles.empty}>Нет активных кредитов</p>
           ) : (
@@ -112,9 +117,11 @@ export function ProfilePage() {
             ))
           )}
 
-          {showRentals && (
+          {isGmOrAdmin && (
             <>
-              <h3 style={{ marginTop: '1rem' }}>🏠 Аренды</h3>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.emoji}>🏠</span> АРЕНДЫ
+              </h3>
               {balance.rental_batches.length === 0 ? (
                 <p className={styles.empty}>Нет активных аренд</p>
               ) : (
@@ -133,6 +140,34 @@ export function ProfilePage() {
                       {b.expires_at && (
                         <> · Истекает: {formatDate(b.expires_at)}</>
                       )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
+          {(isGmOrAdmin || hasGmRewards) && (
+            <>
+              <h3 className={styles.sectionTitle}>
+                <span className={styles.emoji}>⭐</span> МАСТЕРСКИЕ КРЕДИТЫ
+              </h3>
+              {balance.gm_reward_batches.length === 0 ? (
+                <p className={styles.empty}>Нет мастерских кредитов</p>
+              ) : (
+                balance.gm_reward_batches.map((b) => (
+                  <div key={b.id} className={`card ${styles.batchCard}`}>
+                    <div className={styles.batchHeader}>
+                      <span className={styles.batchCredits}>
+                        {b.remaining}/{b.total}
+                      </span>
+                      <span className={`badge badge-${b.status === 'active' ? 'green' : 'orange'}`}>
+                        {b.status}
+                      </span>
+                    </div>
+                    <div className={styles.batchMeta}>
+                      Получено: {formatDate(b.purchased_at)}
+                      <> · За проведённую сессию</>
                     </div>
                   </div>
                 ))
@@ -190,8 +225,13 @@ export function ProfilePage() {
             history.map((h) => (
               <div key={h.id} className={`card ${styles.historyCard}`}>
                 <div className={styles.historyHeader}>
-                  <span className={h.entry_type === 'debit' ? styles.debit : styles.refund}>
-                    {h.entry_type === 'debit' ? '−1' : '+1'}
+                  <span className={
+                    h.entry_type === 'debit' ? styles.debit :
+                    h.entry_type === 'gm_reward' ? styles.gmReward :
+                    styles.refund
+                  }>
+                    {h.entry_type === 'debit' ? '−1' :
+                     h.entry_type === 'gm_reward' ? '⭐+1' : '+1'}
                   </span>
                   <span className={styles.historyDate}>
                     {formatDateTime(h.created_at)}

@@ -16,12 +16,15 @@ router = APIRouter(prefix="/credits", tags=["credits"])
 def _build_balance_response(batches) -> CreditBalanceRead:
     credit_batches = [b for b in batches if b.batch_type == CreditBatchType.credit]
     rental_batches = [b for b in batches if b.batch_type == CreditBatchType.rental]
+    gm_reward_batches = [b for b in batches if b.batch_type == CreditBatchType.gm_reward]
 
     return CreditBalanceRead(
         total_credits=sum(b.remaining for b in credit_batches),
         total_rentals=sum(b.remaining for b in rental_batches),
+        total_gm_rewards=sum(b.remaining for b in gm_reward_batches),
         credit_batches=[CreditBatchRead.model_validate(b) for b in credit_batches],
         rental_batches=[CreditBatchRead.model_validate(b) for b in rental_batches],
+        gm_reward_batches=[CreditBatchRead.model_validate(b) for b in gm_reward_batches],
     )
 
 
@@ -30,7 +33,6 @@ async def get_balance(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get current user's credit balance with batch breakdown."""
     batches = await get_available_batches(db, current_user.id)
     return _build_balance_response(batches)
 
@@ -40,7 +42,6 @@ async def get_history(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get current user's credit transaction history."""
     result = await db.execute(
         select(LedgerEntry)
         .where(LedgerEntry.user_id == current_user.id)
@@ -55,7 +56,6 @@ async def get_user_balance(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get a user's credit balance. Admin or the user themselves."""
     from app.models.user import UserRole
 
     if current_user.id != user_id and current_user.role != UserRole.admin:

@@ -9,7 +9,8 @@ from app.models.ledger import LedgerType
 
 class CreditBatchRead(BaseModel):
     id: int
-    order_id: int
+    order_id: Optional[int] = None
+    session_id: Optional[int] = None
     batch_type: CreditBatchType
     total: int
     remaining: int
@@ -24,8 +25,10 @@ class CreditBatchRead(BaseModel):
 class CreditBalanceRead(BaseModel):
     total_credits: int
     total_rentals: int
+    total_gm_rewards: int
     credit_batches: List[CreditBatchRead]
     rental_batches: List[CreditBatchRead]
+    gm_reward_batches: List[CreditBatchRead]
 
 
 class LedgerEntryRead(BaseModel):

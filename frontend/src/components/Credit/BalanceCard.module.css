@@ -8,7 +8,7 @@
 .row {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .block {
@@ -30,6 +30,13 @@
   margin-bottom: 0.25rem;
 }
 
+.labelGm {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--accent-gold, #f0c040);
+  margin-bottom: 0.25rem;
+}
+
 .value {
   font-family: var(--font-display);
   font-size: 2.5rem;
@@ -42,6 +49,13 @@
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--accent-purple);
+}
+
+.valueGm {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-gold, #f0c040);
 }
 
 .sub {

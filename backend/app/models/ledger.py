@@ -10,8 +10,9 @@ from app.database import Base
 
 
 class LedgerType(str, enum.Enum):
-    debit = "debit"
-    refund = "refund"
+    debit = "debit"          # Списание кредита за посещение
+    refund = "refund"        # Возврат кредита
+    gm_reward = "gm_reward"  # Начисление мастерского кредита
 
 
 class LedgerEntry(Base):

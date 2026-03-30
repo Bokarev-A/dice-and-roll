@@ -13,10 +13,10 @@ class CreditBatchStatus(str, enum.Enum):
     expired = "expired"
 
 
-
 class CreditBatchType(str, enum.Enum):
-    credit = "credit"
-    rental = "rental"
+    credit = "credit"        # Обычный игровой кредит
+    rental = "rental"        # Аренда комнаты
+    gm_reward = "gm_reward"  # Мастерский кредит (за проведённую сессию от клуба)
 
 
 class CreditBatch(Base):
@@ -26,10 +26,13 @@ class CreditBatch(Base):
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=False
     )
-    order_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("orders.id"), unique=True, nullable=False
+    order_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("orders.id"), unique=True, nullable=True  # NULL for gm_reward
     )
-    batch_type: Mapped[str] = mapped_column(
+    session_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("game_sessions.id"), nullable=True  # For gm_reward: which session earned it
+    )
+    batch_type: Mapped[CreditBatchType] = mapped_column(
         SAEnum(CreditBatchType), default=CreditBatchType.credit, nullable=False
     )
     total: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -47,3 +50,4 @@ class CreditBatch(Base):
     # Relationships
     user = relationship("User", back_populates="credit_batches")
     order = relationship("Order", lazy="selectin")
+    source_session = relationship("GameSession", lazy="selectin")

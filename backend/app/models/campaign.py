@@ -15,6 +15,11 @@ class CampaignType(str, enum.Enum):
     oneshot = "oneshot"
 
 
+class CampaignFunding(str, enum.Enum):
+    club = "club"        # От клуба: игроки платят кредитами, мастер получает gm_reward
+    private = "private"  # Частная: мастер арендует комнату, с игроками сам
+
+
 class CampaignVisibility(str, enum.Enum):
     public = "public"
     link = "link"
@@ -31,6 +36,9 @@ class Campaign(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     type: Mapped[CampaignType] = mapped_column(
         SAEnum(CampaignType), nullable=False
+    )
+    funding: Mapped[CampaignFunding] = mapped_column(
+        SAEnum(CampaignFunding), default=CampaignFunding.club, nullable=False
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     system: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -4,11 +4,20 @@ import styles from './BalanceCard.module.css';
 interface BalanceCardProps {
   totalCredits: number;
   totalRentals?: number;
+  totalGmRewards?: number;
   showRentals?: boolean;
+  showGmRewards?: boolean;
   onClick?: () => void;
 }
 
-export function BalanceCard({ totalCredits, totalRentals = 0, showRentals = false, onClick }: BalanceCardProps) {
+export function BalanceCard({
+  totalCredits,
+  totalRentals = 0,
+  totalGmRewards = 0,
+  showRentals = false,
+  showGmRewards = false,
+  onClick,
+}: BalanceCardProps) {
   return (
     <div className={`card card-glow ${styles.balance}`} onClick={onClick}>
       <div className={styles.row}>
@@ -22,6 +31,13 @@ export function BalanceCard({ totalCredits, totalRentals = 0, showRentals = fals
             <div className={styles.labelRental}>Аренды</div>
             <div className={styles.valueRental}>{totalRentals}</div>
             <div className={styles.sub}>{totalRentals} доступно</div>
+          </div>
+        )}
+        {showGmRewards && (
+          <div className={styles.block}>
+            <div className={styles.labelGm}>Мастерские</div>
+            <div className={styles.valueGm}>{totalGmRewards}</div>
+            <div className={styles.sub}>{totalGmRewards} доступно</div>
           </div>
         )}
       </div>
