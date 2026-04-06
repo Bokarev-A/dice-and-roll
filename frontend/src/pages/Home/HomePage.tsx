@@ -52,7 +52,9 @@ export function HomePage() {
       <BalanceCard
         totalCredits={balance?.total_credits || 0}
         totalRentals={balance?.total_rentals || 0}
+        totalGmRewards={balance?.total_gm_rewards || 0}
         showRentals={user?.role === 'gm' || user?.role === 'admin'}
+        showGmRewards={(user?.role === 'gm' || user?.role === 'admin') || (balance?.total_gm_rewards || 0) > 0}
         onClick={() => navigate('/profile')}
       />
 

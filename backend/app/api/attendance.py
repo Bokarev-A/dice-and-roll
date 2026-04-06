@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.models.session import GameSession
-from app.models.campaign import Campaign
+from app.models.campaign import Campaign, CampaignFunding
 from app.models.attendance import Attendance
 from app.schemas.attendance import AttendanceUpdate, AttendanceRead, UnpaidRead
 from app.api.deps import get_current_user, require_gm, require_admin
@@ -17,7 +17,7 @@ from app.services.attendance_service import (
     get_session_attendances,
     get_unpaid_attendances,
 )
-from app.services.credit_service import refund_credit
+from app.services.credit_service import refund_credit, grant_gm_reward
 from app.bot import notifications as notify
 from app.config import settings
 
@@ -153,6 +153,10 @@ async def update_attendance(
     attendance = await mark_attendance(
         db, session_id, user_id, body.status, current_user.id
     )
+
+    # Grant GM reward for club-funded campaigns (idempotent — fires once per session)
+    if campaign.funding == CampaignFunding.club:
+        await grant_gm_reward(db, campaign.owner_gm_user_id, session_id)
 
     # Notify if unpaid
     if attendance.unpaid:

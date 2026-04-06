@@ -4,6 +4,7 @@ import { ordersApi } from '../../api/orders';
 import type { Order, QRPaymentInfo } from '../../types/index';
 import { Loader } from '../../components/UI/Loader';
 import { OrderBadge } from '../../components/UI/Badge';
+import { BackButton } from '../../components/UI/BackButton';
 import { formatPrice } from '../../utils/format';
 import { useUIStore } from '../../store/useUIStore';
 import styles from './PaymentPage.module.css';
@@ -74,6 +75,7 @@ export function PaymentPage() {
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
+      <BackButton to="/shop" />
       <h1>Оплата</h1>
 
       <div className={`card ${styles.orderCard}`}>

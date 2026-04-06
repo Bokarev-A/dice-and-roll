@@ -7,6 +7,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { SessionBadge, SignupBadge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
+import { BackButton } from '../../components/UI/BackButton';
 import { formatDateTime } from '../../utils/format';
 import styles from './GM.module.css';
 
@@ -76,6 +77,7 @@ export function GMSessionDetailPage() {
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
+      <BackButton to={`/gm/campaigns/${session.campaign_id}`} />
       <div className={styles.pageHeader}>
         <h1>{session.campaign_title}</h1>
         <SessionBadge status={session.status} />

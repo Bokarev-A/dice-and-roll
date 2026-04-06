@@ -6,6 +6,7 @@ import type { Product } from '../../types/index';
 import { ProductCard } from '../../components/Order/ProductCard';
 import { Loader } from '../../components/UI/Loader';
 import { useUIStore } from '../../store/useUIStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import styles from './ShopPage.module.css';
 
 type Tab = 'player' | 'gm_room';
@@ -13,6 +14,8 @@ type Tab = 'player' | 'gm_room';
 export function ShopPage() {
   const navigate = useNavigate();
   const showToast = useUIStore((s) => s.showToast);
+  const user = useAuthStore((s) => s.user);
+  const isGmOrAdmin = user?.role === 'gm' || user?.role === 'admin';
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
@@ -63,12 +66,14 @@ export function ShopPage() {
         >
           🎮 Для игроков
         </button>
-        <button
-          className={`${styles.tab} ${tab === 'gm_room' ? styles.tabActive : ''}`}
-          onClick={() => setTab('gm_room')}
-        >
-          🎲 Для мастеров
-        </button>
+        {isGmOrAdmin && (
+          <button
+            className={`${styles.tab} ${tab === 'gm_room' ? styles.tabActive : ''}`}
+            onClick={() => setTab('gm_room')}
+          >
+            🎲 Для мастеров
+          </button>
+        )}
       </div>
 
       <p className={styles.subtitle}>

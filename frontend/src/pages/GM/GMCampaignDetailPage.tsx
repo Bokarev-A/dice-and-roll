@@ -9,6 +9,7 @@ import { SessionCard } from '../../components/Session/SessionCard';
 import { Badge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
+import { BackButton } from '../../components/UI/BackButton';
 import styles from './GM.module.css';
 import { localInputToISO } from '../../utils/format';
 
@@ -83,6 +84,7 @@ export function GMCampaignDetailPage() {
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
+      <BackButton to="/gm/campaigns" />
       <div className={styles.pageHeader}>
         <div>
           <Badge

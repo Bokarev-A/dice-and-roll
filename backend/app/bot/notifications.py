@@ -109,12 +109,18 @@ async def notify_session_reminder(
     room: str,
     hours: int,
 ):
+    if hours >= 24 and hours % 24 == 0:
+        days = hours // 24
+        time_left = f"{days} дн."
+    else:
+        time_left = f"{hours} ч."
+
     text = (
         f"⏰ <b>Напоминание о сессии</b>\n\n"
         f"Кампания: {campaign_title}\n"
         f"Время: {starts_at}\n"
         f"Комната: {room}\n"
-        f"До начала: {hours} ч."
+        f"До начала: {time_left}"
     )
     await send_message(telegram_id, text)
 

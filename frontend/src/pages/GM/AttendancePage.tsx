@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { BackButton } from '../../components/UI/BackButton';
 import { attendanceApi } from '../../api/attendance';
 import { sessionsApi } from '../../api/sessions';
 import type { Attendance, AttendanceStatus, GameSession } from '../../types/index';
@@ -80,6 +81,7 @@ export function AttendancePage() {
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
+      <BackButton to={`/gm/sessions/${sid}`} />
       <h1>Посещаемость</h1>
 
       <div className={`card ${styles.sessionInfo}`}>

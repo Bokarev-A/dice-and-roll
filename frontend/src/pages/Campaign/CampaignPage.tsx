@@ -10,6 +10,7 @@ import { SessionCard } from '../../components/Session/SessionCard';
 import { Badge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
+import { BackButton } from '../../components/UI/BackButton';
 import styles from './CampaignPage.module.css';
 
 export function CampaignPage() {
@@ -21,22 +22,30 @@ export function CampaignPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [members, setMembers] = useState<CampaignMember[]>([]);
+  const [mySignups, setMySignups] = useState<number[]>([]); // session_id[]
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
   const campaignId = Number(id);
   const isMember = members.some((m) => m.user_id === user?.id);
+  const isOwnerGM = campaign?.owner_gm_user_id === user?.id;
 
   async function load() {
     try {
-      const [c, s, m] = await Promise.all([
+      const [c, s, m, signups] = await Promise.all([
         campaignsApi.getById(campaignId),
         sessionsApi.getByCampaign(campaignId),
         campaignsApi.listMembers(campaignId),
+        signupsApi.my(),
       ]);
       setCampaign(c);
       setSessions(s);
       setMembers(m);
+      setMySignups(
+        signups
+          .filter((sg) => sg.status !== 'cancelled')
+          .map((sg) => sg.session_id)
+      );
     } catch {
       // silent
     } finally {
@@ -93,6 +102,7 @@ export function CampaignPage() {
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
+      <BackButton to="/catalog" />
       <div className={styles.header}>
         <Badge
           text={campaign.type === 'campaign' ? 'Кампания' : 'Ваншот'}
@@ -126,7 +136,7 @@ export function CampaignPage() {
         <button
           className="btn btn-primary btn-block"
           onClick={handleJoin}
-          disabled={actionLoading}
+          disabled={actionLoading || isOwnerGM}
         >
           Присоединиться
         </button>
@@ -134,7 +144,7 @@ export function CampaignPage() {
         <button
           className="btn btn-danger btn-block"
           onClick={handleLeave}
-          disabled={actionLoading}
+          disabled={actionLoading || isOwnerGM}
         >
           Покинуть кампанию
         </button>
@@ -151,15 +161,30 @@ export function CampaignPage() {
           {futureSessions.map((s) => (
             <div key={s.id}>
               <SessionCard session={s} showCampaign={false} />
-              {isMember && s.confirmed_count < s.capacity && (
-                <button
-                  className="btn btn-primary btn-sm"
-                  style={{ marginTop: '8px' }}
-                  onClick={() => handleSignup(s.id)}
-                >
-                  Записаться
-                </button>
-              )}
+              {isMember && (() => {
+                const alreadySignedUp = mySignups.includes(s.id);
+                if (alreadySignedUp) {
+                  return (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      style={{ marginTop: '8px' }}
+                      disabled
+                    >
+                      Уже записан
+                    </button>
+                  );
+                }
+                if (s.confirmed_count >= s.capacity) return null;
+                return (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    style={{ marginTop: '8px' }}
+                    onClick={() => handleSignup(s.id)}
+                  >
+                    Записаться
+                  </button>
+                );
+              })()}
             </div>
           ))}
         </div>
