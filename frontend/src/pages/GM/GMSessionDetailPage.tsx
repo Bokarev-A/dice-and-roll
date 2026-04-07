@@ -131,7 +131,7 @@ export function GMSessionDetailPage() {
             <div key={signup.id} className={`card ${styles.signupCard}`}>
               <div className={styles.signupHeader}>
                 <span className={styles.signupUser}>
-                  Игрок #{signup.user_id}
+                  {signup.user_name || `Игрок #${signup.user_id}`}
                 </span>
                 <SignupBadge status={signup.status} />
               </div>

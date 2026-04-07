@@ -16,6 +16,7 @@ from app.services.attendance_service import (
     mark_attendance,
     get_session_attendances,
     get_unpaid_attendances,
+    complete_session_if_all_marked,
 )
 from app.services.credit_service import refund_credit, grant_gm_reward
 from app.bot import notifications as notify
@@ -154,14 +155,18 @@ async def update_attendance(
         db, session_id, user_id, body.status, current_user.id
     )
 
+    campaign = await db.get(Campaign, session.campaign_id)
+
     # Grant GM reward for club-funded campaigns (idempotent — fires once per session)
-    if campaign.funding == CampaignFunding.club:
+    if campaign and campaign.funding == CampaignFunding.club:
         await grant_gm_reward(db, campaign.owner_gm_user_id, session_id)
+
+    # Auto-complete session if all attendances are marked
+    await complete_session_if_all_marked(db, session_id)
 
     # Notify if unpaid
     if attendance.unpaid:
         user = await db.get(User, user_id)
-        campaign = await db.get(Campaign, session.campaign_id)
         if user and campaign:
             import pytz
 

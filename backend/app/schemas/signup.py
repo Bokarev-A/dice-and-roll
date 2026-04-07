@@ -14,6 +14,7 @@ class SignupRead(BaseModel):
     id: int
     session_id: int
     user_id: int
+    user_name: Optional[str] = None
     status: SignupStatus
     waitlist_position: Optional[int] = None
     offered_at: Optional[datetime] = None

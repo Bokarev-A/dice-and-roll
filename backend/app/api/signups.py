@@ -142,7 +142,8 @@ async def list_session_signups(
         )
 
     result = await db.execute(
-        select(Signup)
+        select(Signup, User.first_name, User.last_name)
+        .join(User, Signup.user_id == User.id)
         .where(Signup.session_id == session_id)
         .order_by(
             Signup.status.asc(),
@@ -150,7 +151,14 @@ async def list_session_signups(
             Signup.created_at.asc(),
         )
     )
-    return result.scalars().all()
+    rows = result.all()
+    return [
+        SignupRead(
+            **{col.name: getattr(row.Signup, col.name) for col in Signup.__table__.columns},
+            user_name=f"{row.first_name} {row.last_name or ''}".strip(),
+        )
+        for row in rows
+    ]
 
 
 @router.post("/{signup_id}/action", response_model=SignupRead)

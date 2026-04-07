@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.signup import Signup, SignupStatus
-from app.models.session import GameSession
+from app.models.session import GameSession, SessionStatus
 from app.services.credit_service import debit_credit
 
 
@@ -95,6 +95,34 @@ async def mark_attendance(
     await db.commit()
     await db.refresh(attendance)
     return attendance
+
+
+async def complete_session_if_all_marked(
+    db: AsyncSession, session_id: int
+) -> bool:
+    """
+    Set session status to 'done' if all attendance records are marked.
+    Returns True if session was completed.
+    """
+    result = await db.execute(
+        select(Attendance).where(
+            and_(
+                Attendance.session_id == session_id,
+                Attendance.status == AttendanceStatus.unmarked,
+            )
+        )
+    )
+    has_unmarked = result.scalar_one_or_none() is not None
+    if has_unmarked:
+        return False
+
+    session = await db.get(GameSession, session_id)
+    if session and session.status not in (SessionStatus.done, SessionStatus.canceled):
+        session.status = SessionStatus.done
+        await db.commit()
+        return True
+
+    return False
 
 
 async def get_session_attendances(

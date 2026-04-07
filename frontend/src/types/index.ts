@@ -150,6 +150,7 @@ export type Signup = {
   id: number;
   session_id: number;
   user_id: number;
+  user_name?: string;
   status: SignupStatus;
   waitlist_position?: number;
   offered_at?: string;

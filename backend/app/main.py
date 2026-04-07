@@ -17,7 +17,9 @@ from app.api.sessions import router as sessions_router
 from app.api.signups import router as signups_router
 from app.api.attendance import router as attendance_router
 from app.api.calendar import router as calendar_router
+from app.api.webhook import router as webhook_router
 from app.services.scheduler_service import start_scheduler, stop_scheduler
+from app.config import settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,6 +36,9 @@ async def lifespan(app: FastAPI):
     """Application startup and shutdown."""
     logger.info("Starting Dice&Roll API...")
     start_scheduler()
+    if settings.WEBHOOK_URL:
+        from app.bot.notifications import register_webhook
+        await register_webhook()
     yield
     logger.info("Shutting down Dice&Roll API...")
     stop_scheduler()
@@ -66,6 +71,7 @@ app.include_router(sessions_router, prefix="/api")
 app.include_router(signups_router, prefix="/api")
 app.include_router(attendance_router, prefix="/api")
 app.include_router(calendar_router, prefix="/api")
+app.include_router(webhook_router, prefix="/bot")
 
 
 @app.get("/api/health")

@@ -294,3 +294,107 @@ async def notify_credits_expired(
         f"Приобретите новый абонемент для продолжения игр."
     )
     await send_message(telegram_id, text)
+
+
+# ── 48h GM confirmation flow ─────────────────────────────────────
+
+
+async def notify_gm_48h_confirmation(
+    telegram_id: int,
+    campaign_title: str,
+    starts_at_str: str,
+    room_name: str,
+    session_id: int,
+):
+    text = (
+        f"📋 <b>Подтвердите проведение сессии</b>\n\n"
+        f"Кампания: {campaign_title}\n"
+        f"Время: {starts_at_str}\n"
+        f"Комната: {room_name}\n\n"
+        f"Сессия через 2 дня. Подтвердите, перенесите или отмените."
+    )
+    reply_markup = {
+        "inline_keyboard": [[
+            {"text": "✅ Подтвердить", "callback_data": f"gm_ok_{session_id}"},
+            {"text": "📅 Перенести",   "callback_data": f"gm_mv_{session_id}"},
+            {"text": "❌ Отменить",    "callback_data": f"gm_no_{session_id}"},
+        ]]
+    }
+    await send_message(telegram_id, text, reply_markup=reply_markup)
+
+
+async def notify_player_confirm_attendance(
+    telegram_id: int,
+    campaign_title: str,
+    starts_at_str: str,
+    room_name: str,
+    signup_id: int,
+):
+    text = (
+        f"⏰ <b>Подтвердите участие в сессии</b>\n\n"
+        f"Кампания: {campaign_title}\n"
+        f"Время: {starts_at_str}\n"
+        f"Комната: {room_name}\n\n"
+        f"Планируете прийти?"
+    )
+    reply_markup = {
+        "inline_keyboard": [[
+            {"text": "✅ Буду",            "callback_data": f"pl_ok_{signup_id}"},
+            {"text": "❌ Отменить запись", "callback_data": f"pl_no_{signup_id}"},
+        ]]
+    }
+    await send_message(telegram_id, text, reply_markup=reply_markup)
+
+
+async def notify_gm_player_response(
+    gm_telegram_id: int,
+    player_name: str,
+    campaign_title: str,
+    action: str,
+):
+    if action == "confirmed":
+        text = (
+            f"✅ <b>{player_name}</b> подтвердил(а) явку\n"
+            f"Кампания: {campaign_title}"
+        )
+    else:
+        text = (
+            f"❌ <b>{player_name}</b> отменил(а) запись\n"
+            f"Кампания: {campaign_title}"
+        )
+    await send_message(gm_telegram_id, text)
+
+
+async def notify_gm_reschedule_redirect(
+    gm_telegram_id: int,
+    mini_app_url: str,
+):
+    text = (
+        f"📅 <b>Перенос сессии</b>\n\n"
+        f"Для изменения времени и комнаты воспользуйтесь приложением."
+    )
+    if mini_app_url:
+        text += f"\n\n<a href=\"{mini_app_url}\">Открыть приложение</a>"
+    await send_message(gm_telegram_id, text)
+
+
+async def register_webhook() -> None:
+    """Register Telegram webhook on app startup."""
+    from app.config import settings
+
+    payload = {
+        "url": settings.WEBHOOK_URL,
+        "allowed_updates": ["callback_query"],
+    }
+    if settings.WEBHOOK_SECRET:
+        payload["secret_token"] = settings.WEBHOOK_SECRET
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.post(f"{BOT_API_URL}/setWebhook", json=payload)
+    if resp.status_code == 200 and resp.json().get("ok"):
+        logger.info("Telegram webhook registered: %s", settings.WEBHOOK_URL)
+    else:
+        logger.error("Failed to register Telegram webhook: %s", resp.text)

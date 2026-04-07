@@ -104,6 +104,17 @@ async def job_auto_approve_offers():
             logger.error(f"Error auto-approving offers: {e}")
 
 
+async def job_gm_48h_confirmation():
+    """Send 48h-ahead confirmation requests to GMs."""
+    from app.services.gm_confirmation_service import send_gm_48h_notifications
+
+    async with async_session() as db:
+        try:
+            await send_gm_48h_notifications(db)
+        except Exception as e:
+            logger.error(f"Error in GM 48h confirmation job: {e}")
+
+
 async def job_attendance_reminders():
     """Remind GMs to mark attendance for old sessions."""
     from app.services.attendance_service import get_unmarked_sessions
@@ -150,8 +161,9 @@ def start_scheduler():
     scheduler.add_job(job_expire_orders, "interval", minutes=10)
     scheduler.add_job(job_auto_approve_offers, "interval", minutes=10)
 
-    # Every 15 minutes: session reminders
+    # Every 15 minutes: session reminders, GM 48h confirmations
     scheduler.add_job(job_session_reminders, "interval", minutes=15)
+    scheduler.add_job(job_gm_48h_confirmation, "interval", minutes=15)
 
     # Daily at 3:00 AM: expire credits, send warnings, attendance reminders
     scheduler.add_job(job_expire_credits, "cron", hour=3, minute=0)

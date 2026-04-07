@@ -34,6 +34,12 @@ class GameSession(Base):
     status: Mapped[SessionStatus] = mapped_column(
         SAEnum(SessionStatus), default=SessionStatus.planned, nullable=False
     )
+    gm_48h_notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    players_confirmed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

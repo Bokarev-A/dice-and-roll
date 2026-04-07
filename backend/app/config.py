@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     REMINDER_HOURS_BEFORE: str = "24,2"
     ATTENDANCE_WINDOW_HOURS: int = 48
 
+    WEBHOOK_URL: str = ""
+    WEBHOOK_SECRET: str = ""
+    MINI_APP_URL: str = ""
+
     SKIP_TG_VALIDATION: bool = False
 
     @property
