@@ -51,6 +51,7 @@ async def _build_entry(
         is_gm=is_gm,
         capacity=session.capacity,
         confirmed_count=confirmed_count,
+        description=session.description,
     )
 
 

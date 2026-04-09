@@ -14,6 +14,7 @@ export const sessionsApi = {
     starts_at: string;
     ends_at: string;
     capacity: number;
+    description?: string;
   }) => api.post<GameSession>('/sessions/', data).then(r => r.data),
 
   update: (id: number, data: Record<string, unknown>) =>

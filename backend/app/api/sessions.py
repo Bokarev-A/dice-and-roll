@@ -72,6 +72,7 @@ async def session_to_read(
         ends_at=session.ends_at,
         capacity=session.capacity,
         status=session.status,
+        description=session.description,
         confirmed_count=confirmed,
         waitlist_count=waitlist,
         created_at=session.created_at,
@@ -177,6 +178,7 @@ async def create_session(
         starts_at=body.starts_at,
         ends_at=body.ends_at,
         capacity=body.capacity,
+        description=body.description,
         status=SessionStatus.planned,
     )
     db.add(session)

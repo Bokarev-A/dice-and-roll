@@ -23,7 +23,7 @@ export function NavBar() {
 
   const gmNav: NavItem[] = [
     { path: '/', icon: '🏠', label: 'Главная' },
-    { path: '/gm/campaigns', icon: '🎲', label: 'Кампании' },
+    { path: '/catalog', icon: '🎲', label: 'Каталог' },
     { path: '/my-sessions', icon: '📅', label: 'Сессии' },
     { path: '/shop', icon: '💎', label: 'Магазин' },
     { path: '/profile', icon: '👤', label: 'Профиль' },
@@ -32,7 +32,7 @@ export function NavBar() {
   const adminNav: NavItem[] = [
     { path: '/', icon: '🏠', label: 'Главная' },
     { path: '/admin/orders', icon: '💳', label: 'Оплаты' },
-    { path: '/gm/campaigns', icon: '🎲', label: 'Кампании' },
+    { path: '/catalog', icon: '🎲', label: 'Каталог' },
     { path: '/admin/users', icon: '👥', label: 'Юзеры' },
     { path: '/profile', icon: '👤', label: 'Профиль' },
   ];

@@ -12,6 +12,7 @@ class SessionCreate(BaseModel):
     starts_at: datetime
     ends_at: datetime
     capacity: int
+    description: Optional[str] = None
 
 
 class SessionUpdate(BaseModel):
@@ -20,6 +21,7 @@ class SessionUpdate(BaseModel):
     ends_at: Optional[datetime] = None
     capacity: Optional[int] = None
     status: Optional[SessionStatus] = None
+    description: Optional[str] = None
 
 
 class SessionRead(BaseModel):
@@ -32,6 +34,7 @@ class SessionRead(BaseModel):
     ends_at: datetime
     capacity: int
     status: SessionStatus
+    description: Optional[str] = None
     confirmed_count: int = 0
     waitlist_count: int = 0
     created_at: datetime

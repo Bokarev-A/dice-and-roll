@@ -125,6 +125,9 @@ export type CampaignMember = {
   campaign_id: number;
   user_id: number;
   joined_at: string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
 };
 
 export type SessionStatus = 'planned' | 'moved' | 'canceled' | 'done';
@@ -139,6 +142,7 @@ export type GameSession = {
   ends_at: string;
   capacity: number;
   status: SessionStatus;
+  description?: string;
   confirmed_count: number;
   waitlist_count: number;
   created_at: string;
@@ -193,6 +197,7 @@ export type CalendarEntry = {
   capacity: number;
   confirmed_count: number;
   is_gm?: boolean;
+  description?: string;
 };
 
 export type PublicSessionEntry = {

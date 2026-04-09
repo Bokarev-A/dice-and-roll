@@ -91,6 +91,12 @@ export function MySessionsPage() {
                 {entry.campaign_title}
               </div>
 
+              {entry.description && (
+                <div className={styles.description}>
+                  {entry.description}
+                </div>
+              )}
+
               <div className={styles.meta}>
                 🚪 {entry.room_name} · 👥 {entry.confirmed_count}/{entry.capacity}
               </div>

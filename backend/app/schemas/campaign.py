@@ -43,6 +43,9 @@ class CampaignMemberRead(BaseModel):
     campaign_id: int
     user_id: int
     joined_at: datetime
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    username: Optional[str] = None
 
     class Config:
         from_attributes = True

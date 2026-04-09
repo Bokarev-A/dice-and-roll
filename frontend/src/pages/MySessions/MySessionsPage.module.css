@@ -53,6 +53,16 @@
   color: var(--neon-pink);
 }
 
+.description {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 .meta {
   font-family: var(--font-body);
   font-size: 0.8rem;

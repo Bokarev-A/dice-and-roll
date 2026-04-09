@@ -93,6 +93,22 @@ async def my_campaigns(
     )
 
 
+@router.get("/joined", response_model=list[CampaignRead])
+async def list_joined_campaigns(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List campaigns the current user has joined as a member."""
+    result = await db.execute(
+        select(CampaignMember.campaign_id)
+        .where(CampaignMember.user_id == current_user.id)
+    )
+    campaign_ids = [row[0] for row in result.all()]
+    if not campaign_ids:
+        return []
+    return await campaigns_with_counts(db, Campaign.id.in_(campaign_ids))
+
+
 @router.get("/{campaign_id}", response_model=CampaignRead)
 async def get_campaign(
     campaign_id: int,
@@ -199,11 +215,24 @@ async def list_members(
         )
 
     result = await db.execute(
-        select(CampaignMember)
+        select(CampaignMember, User)
+        .join(User, CampaignMember.user_id == User.id)
         .where(CampaignMember.campaign_id == campaign_id)
         .order_by(CampaignMember.joined_at.asc())
     )
-    return result.scalars().all()
+    rows = result.all()
+    members = []
+    for member, user in rows:
+        members.append(CampaignMemberRead(
+            id=member.id,
+            campaign_id=member.campaign_id,
+            user_id=member.user_id,
+            joined_at=member.joined_at,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            username=user.username,
+        ))
+    return members
 
 
 @router.post("/{campaign_id}/join", response_model=CampaignMemberRead)

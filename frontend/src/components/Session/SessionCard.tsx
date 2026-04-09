@@ -28,12 +28,16 @@ export function SessionCard({ session, onClick, showCampaign = true }: SessionCa
         <h3 className={styles.title}>{session.campaign_title}</h3>
       )}
 
+      {session.description && (
+        <p className={styles.description}>{session.description}</p>
+      )}
+
       <div className={styles.meta}>
         <span className={styles.room}>🚪 {session.room_name}</span>
         <span className={styles.spots}>
           👥 {session.confirmed_count}/{session.capacity}
           {spotsLeft > 0 && (
-            <span className={styles.spotsLeft}> ({spotsLeft} мест)</span>
+            <span className={styles.spotsLeft}> ({spotsLeft} свободно)</span>
           )}
         </span>
       </div>

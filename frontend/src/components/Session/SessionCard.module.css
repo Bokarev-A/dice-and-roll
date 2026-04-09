@@ -36,6 +36,17 @@
   letter-spacing: 0.05em;
 }
 
+.description {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 .meta {
   display: flex;
   justify-content: space-between;

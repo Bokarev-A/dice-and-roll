@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Integer, ForeignKey, DateTime, Enum as SAEnum, func
+from sqlalchemy import Integer, ForeignKey, DateTime, Enum as SAEnum, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -31,6 +31,7 @@ class GameSession(Base):
         DateTime(timezone=True), nullable=False
     )
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[SessionStatus] = mapped_column(
         SAEnum(SessionStatus), default=SessionStatus.planned, nullable=False
     )

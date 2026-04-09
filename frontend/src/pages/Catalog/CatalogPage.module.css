@@ -93,3 +93,33 @@
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+.mineHeader {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.typeButtons {
+  display: flex;
+  gap: 8px;
+}

@@ -102,6 +102,11 @@ export function HomePage() {
                 <div className={styles.sessionTitle}>
                   {entry.campaign_title}
                 </div>
+                {entry.description && (
+                  <div className={styles.sessionDescription}>
+                    {entry.description}
+                  </div>
+                )}
                 <div className={styles.sessionMeta}>
                   🚪 {entry.room_name} · 👥 {entry.confirmed_count}/{entry.capacity}
                 </div>

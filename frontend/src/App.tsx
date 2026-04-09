@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './store/useAuthStore';
 import { useTelegram } from './hooks/useTelegram';
@@ -15,8 +15,6 @@ import { CampaignPage } from './pages/Campaign/CampaignPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 
 // GM pages
-import { GMCampaignsPage } from './pages/GM/GMCampaignsPage';
-import { GMCampaignDetailPage } from './pages/GM/GMCampaignDetailPage';
 import { GMSessionDetailPage } from './pages/GM/GMSessionDetailPage';
 import { AttendancePage } from './pages/GM/AttendancePage';
 
@@ -26,6 +24,11 @@ import { UsersPage } from './pages/Admin/UsersPage';
 import { UnpaidPage } from './pages/Admin/UnpaidPage';
 
 const IS_DEV = import.meta.env.VITE_DEV_MODE === 'true';
+
+function GMCampaignIdRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/campaign/${id}`} replace />;
+}
 
 function AppRoutes() {
   const user = useAuthStore((s) => s.user);
@@ -45,8 +48,8 @@ function AppRoutes() {
 
         {isGM && (
           <>
-            <Route path="/gm/campaigns" element={<GMCampaignsPage />} />
-            <Route path="/gm/campaigns/:id" element={<GMCampaignDetailPage />} />
+            <Route path="/gm/campaigns" element={<Navigate to="/catalog" replace />} />
+            <Route path="/gm/campaigns/:id" element={<GMCampaignIdRedirect />} />
             <Route path="/gm/sessions/:id" element={<GMSessionDetailPage />} />
             <Route path="/gm/attendance/:sessionId" element={<AttendancePage />} />
           </>
@@ -110,14 +113,15 @@ export default function App() {
       init(data).finally(() => setAttempted(true));
     } else if (IS_DEV) {
       // Dev mode: set fake user directly
+      const devRole = (import.meta.env.VITE_DEV_ROLE || 'admin') as 'player' | 'gm' | 'admin';
       useAuthStore.setState({
         user: {
           id: 1,
           telegram_id: 123456789,
           first_name: 'Dev',
-          last_name: 'Admin',
-          username: 'devadmin',
-          role: 'admin',
+          last_name: devRole === 'gm' ? 'GM' : devRole === 'player' ? 'Player' : 'Admin',
+          username: `dev_${devRole}`,
+          role: devRole,
           created_at: new Date().toISOString(),
         },
         loading: false,

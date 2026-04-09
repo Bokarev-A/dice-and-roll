@@ -77,13 +77,16 @@ export function GMSessionDetailPage() {
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
-      <BackButton to={`/gm/campaigns/${session.campaign_id}`} />
+      <BackButton to={`/campaign/${session.campaign_id}`} />
       <div className={styles.pageHeader}>
         <h1>{session.campaign_title}</h1>
         <SessionBadge status={session.status} />
       </div>
 
       <div className={`card ${styles.sessionInfo}`}>
+        {session.description && (
+          <div className={styles.sessionDescription}>{session.description}</div>
+        )}
         <div className={styles.infoRow}>
           <span>📅</span>
           <span>{formatDateTime(session.starts_at)} — {formatDateTime(session.ends_at)}</span>

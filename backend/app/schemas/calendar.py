@@ -20,6 +20,7 @@ class CalendarEntry(BaseModel):
     is_gm: bool = False
     capacity: int
     confirmed_count: int
+    description: Optional[str] = None
 
 
 class PublicSessionEntry(BaseModel):
