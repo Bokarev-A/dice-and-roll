@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { sessionsApi } from '../../api/sessions';
 import { signupsApi } from '../../api/signups';
-import type { GameSession, Signup } from '../../types/index';
+import { roomsApi } from '../../api/rooms';
+import type { GameSession, Signup, Room } from '../../types/index';
 import { useUIStore } from '../../store/useUIStore';
 import { SessionBadge, SignupBadge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
 import { BackButton } from '../../components/UI/BackButton';
-import { formatDateTime } from '../../utils/format';
+import { formatDateTime, localInputToISO } from '../../utils/format';
 import styles from './GM.module.css';
 
 export function GMSessionDetailPage() {
@@ -19,16 +20,28 @@ export function GMSessionDetailPage() {
 
   const [session, setSession] = useState<GameSession | null>(null);
   const [signups, setSignups] = useState<Signup[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit form state
+  const [editMode, setEditMode] = useState(false);
+  const [editRoomId, setEditRoomId] = useState(0);
+  const [editStartsAt, setEditStartsAt] = useState('');
+  const [editEndsAtTime, setEditEndsAtTime] = useState('');
+  const [editCapacity, setEditCapacity] = useState(5);
+  const [editDescription, setEditDescription] = useState('');
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     try {
-      const [s, sg] = await Promise.all([
+      const [s, sg, rm] = await Promise.all([
         sessionsApi.getById(sessionId),
         signupsApi.listBySession(sessionId),
+        roomsApi.list(),
       ]);
       setSession(s);
       setSignups(sg);
+      setRooms(rm);
     } catch {
       // silent
     } finally {
@@ -39,6 +52,56 @@ export function GMSessionDetailPage() {
   useEffect(() => {
     load();
   }, [sessionId]);
+
+  function openEdit() {
+    if (!session) return;
+    const dt = new Date(session.starts_at);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const localDate = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+    const localTime = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    const endDt = new Date(session.ends_at);
+    const endTime = `${pad(endDt.getHours())}:${pad(endDt.getMinutes())}`;
+
+    setEditRoomId(session.room_id);
+    setEditStartsAt(`${localDate}T${localTime}`);
+    setEditEndsAtTime(endTime);
+    setEditCapacity(session.capacity);
+    setEditDescription(session.description ?? '');
+    setEditMode(true);
+  }
+
+  function handleStartsAtEditChange(value: string) {
+    setEditStartsAt(value);
+    if (value) {
+      const [h, m] = (value.split('T')[1] ?? '00:00').split(':').map(Number);
+      const total = h * 60 + m + 240;
+      setEditEndsAtTime(
+        `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+      );
+    }
+  }
+
+  async function handleSaveEdit() {
+    if (!editStartsAt || !editEndsAtTime || !editRoomId) return;
+    setSaving(true);
+    const datePart = editStartsAt.split('T')[0];
+    try {
+      await sessionsApi.update(sessionId, {
+        room_id: editRoomId,
+        starts_at: localInputToISO(editStartsAt),
+        ends_at: localInputToISO(`${datePart}T${editEndsAtTime}`),
+        capacity: editCapacity,
+        description: editDescription.trim() || null,
+      });
+      showToast('Сессия обновлена', 'success');
+      setEditMode(false);
+      await load();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleAction(signupId: number, action: 'approve' | 'reject') {
     try {
@@ -116,11 +179,96 @@ export function GMSessionDetailPage() {
           📝 Посещаемость
         </button>
         {session.status !== 'canceled' && session.status !== 'done' && (
-          <button className="btn btn-danger btn-sm" onClick={handleCancel}>
-            🚫 Отменить
-          </button>
+          <>
+            <button className="btn btn-secondary btn-sm" onClick={openEdit}>
+              ✏️ Редактировать
+            </button>
+            <button className="btn btn-danger btn-sm" onClick={handleCancel}>
+              🚫 Отменить
+            </button>
+          </>
         )}
       </div>
+
+      {/* Edit form */}
+      {editMode && (
+        <div className={`card ${styles.editForm}`}>
+          <h3>Редактировать сессию</h3>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Комната</label>
+            <select
+              className="input"
+              value={editRoomId}
+              onChange={(e) => setEditRoomId(Number(e.target.value))}
+            >
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Описание</label>
+            <textarea
+              className="input"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Кратко о чём будет сессия..."
+              rows={2}
+              maxLength={200}
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Начало</label>
+            <input
+              className="input"
+              type="datetime-local"
+              value={editStartsAt}
+              onChange={(e) => handleStartsAtEditChange(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Конец (время)</label>
+            <input
+              className="input"
+              type="time"
+              value={editEndsAtTime}
+              onChange={(e) => setEditEndsAtTime(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Мест</label>
+            <input
+              className="input"
+              type="number"
+              min="1"
+              max="20"
+              value={editCapacity}
+              onChange={(e) => setEditCapacity(Number(e.target.value))}
+            />
+          </div>
+
+          <div className={styles.actions}>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleSaveEdit}
+              disabled={saving || !editStartsAt || !editEndsAtTime}
+            >
+              {saving ? 'Сохранение...' : 'Сохранить'}
+            </button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setEditMode(false)}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
 
       <hr className="divider" />
 
