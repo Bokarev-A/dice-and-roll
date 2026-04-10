@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { campaignsApi } from '../../api/campaigns';
 import { sessionsApi } from '../../api/sessions';
 import { roomsApi } from '../../api/rooms';
-import type { Campaign, GameSession, Room } from '../../types/index';
+import type { Campaign, GameSession, Room, CampaignMember } from '../../types/index';
 import { useUIStore } from '../../store/useUIStore';
 import { SessionCard } from '../../components/Session/SessionCard';
 import { Badge } from '../../components/UI/Badge';
@@ -22,6 +22,7 @@ export function GMCampaignDetailPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [members, setMembers] = useState<CampaignMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -34,14 +35,16 @@ export function GMCampaignDetailPage() {
 
   async function load() {
     try {
-      const [c, s, r] = await Promise.all([
+      const [c, s, r, m] = await Promise.all([
         campaignsApi.getById(campaignId),
         sessionsApi.getByCampaign(campaignId),
         roomsApi.list(),
+        campaignsApi.listMembers(campaignId),
       ]);
       setCampaign(c);
       setSessions(s);
       setRooms(r);
+      setMembers(m);
       if (r.length > 0 && roomId === 0) {
         setRoomId(r[0].id);
       }
@@ -55,6 +58,26 @@ export function GMCampaignDetailPage() {
   useEffect(() => {
     load();
   }, [campaignId]);
+
+  async function handleApprove(memberId: number) {
+    try {
+      await campaignsApi.approveMember(campaignId, memberId);
+      showToast('Заявка одобрена', 'success');
+      await load();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    }
+  }
+
+  async function handleReject(memberId: number) {
+    try {
+      await campaignsApi.rejectMember(campaignId, memberId);
+      showToast('Заявка отклонена', 'info');
+      await load();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    }
+  }
 
   async function handleCreateSession() {
     if (!startsAt || !endsAt || !roomId) return;
@@ -163,6 +186,69 @@ export function GMCampaignDetailPage() {
       )}
 
       <hr className="divider" />
+
+      {/* Pending applications */}
+      {(() => {
+        const pending = members.filter(m => m.status === 'pending');
+        if (pending.length === 0) return null;
+        return (
+          <>
+            <h2>Заявки ({pending.length})</h2>
+            <div className={styles.list}>
+              {pending.map((m) => {
+                const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || `Игрок #${m.user_id}`;
+                return (
+                  <div key={m.id} className={`card ${styles.signupCard}`}>
+                    <div className={styles.signupHeader}>
+                      <span className={styles.signupUser}>{name}</span>
+                      {m.username && <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>@{m.username}</span>}
+                    </div>
+                    <div className={styles.signupActions}>
+                      <button className="btn btn-success btn-sm" onClick={() => handleApprove(m.id)}>
+                        ✓ Одобрить
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleReject(m.id)}>
+                        ✕ Отклонить
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <hr className="divider" />
+          </>
+        );
+      })()}
+
+      {/* Active members */}
+      {(() => {
+        const active = members.filter(m => m.status === 'active');
+        if (active.length === 0) return null;
+        return (
+          <>
+            <h2>Участники ({active.length})</h2>
+            <div className={styles.list}>
+              {active.map((m) => {
+                const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || `Игрок #${m.user_id}`;
+                return (
+                  <div key={m.id} className={`card ${styles.signupCard}`}>
+                    <div className={styles.signupHeader}>
+                      <span className={styles.signupUser}>{name}</span>
+                      {m.username && <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>@{m.username}</span>}
+                    </div>
+                    <div className={styles.signupActions}>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleReject(m.id)}>
+                        Удалить
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <hr className="divider" />
+          </>
+        );
+      })()}
 
       {/* Sessions list */}
       <h2>Сессии ({sessions.length})</h2>

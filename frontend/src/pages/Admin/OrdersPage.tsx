@@ -17,6 +17,7 @@ export function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [actionOrderId, setActionOrderId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -40,12 +41,15 @@ export function OrdersPage() {
   }, [tab]);
 
   async function handleConfirm(orderId: number) {
+    setActionOrderId(orderId);
     try {
       await ordersApi.confirm(orderId);
       showToast('Оплата подтверждена!', 'success');
       await load();
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    } finally {
+      setActionOrderId(null);
     }
   }
 
@@ -54,6 +58,7 @@ export function OrdersPage() {
       showToast('Укажите причину', 'error');
       return;
     }
+    setActionOrderId(orderId);
     try {
       await ordersApi.reject(orderId, rejectReason.trim());
       showToast('Оплата отклонена', 'info');
@@ -62,6 +67,8 @@ export function OrdersPage() {
       await load();
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    } finally {
+      setActionOrderId(null);
     }
   }
 
@@ -103,7 +110,7 @@ export function OrdersPage() {
               <div className={styles.orderDetails}>
                 <div className={styles.orderRow}>
                   <span>Игрок:</span>
-                  <span>#{order.user_id}</span>
+                  <span>{order.user_name || `#${order.user_id}`}</span>
                 </div>
                 <div className={styles.orderRow}>
                   <span>Сумма:</span>
@@ -134,14 +141,16 @@ export function OrdersPage() {
                   <button
                     className="btn btn-success btn-sm"
                     onClick={() => handleConfirm(order.id)}
+                    disabled={actionOrderId === order.id}
                   >
-                    ✓ Подтвердить
+                    {actionOrderId === order.id ? '...' : '✓ Подтвердить'}
                   </button>
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={() => setRejectId(
                       rejectId === order.id ? null : order.id
                     )}
+                    disabled={actionOrderId === order.id}
                   >
                     ✕ Отклонить
                   </button>
@@ -159,8 +168,9 @@ export function OrdersPage() {
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={() => handleReject(order.id)}
+                    disabled={actionOrderId === order.id}
                   >
-                    Отклонить
+                    {actionOrderId === order.id ? '...' : 'Отклонить'}
                   </button>
                 </div>
               )}

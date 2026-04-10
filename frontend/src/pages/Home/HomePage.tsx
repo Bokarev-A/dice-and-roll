@@ -3,38 +3,71 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { creditsApi } from '../../api/credits';
 import { calendarApi } from '../../api/calendar';
-import type { CreditBalance, CalendarEntry } from '../../types/index';
+import { signupsApi } from '../../api/signups';
+import type { CreditBalance, CalendarEntry, Signup } from '../../types/index';
 import { BalanceCard } from '../../components/Credit/BalanceCard';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
 import { formatDate, formatTime } from '../../utils/format';
 import { SignupBadge } from '../../components/UI/Badge';
+import { useUIStore } from '../../store/useUIStore';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const showToast = useUIStore((s) => s.showToast);
   const [balance, setBalance] = useState<CreditBalance | null>(null);
   const [sessions, setSessions] = useState<CalendarEntry[]>([]);
+  const [mySignups, setMySignups] = useState<Record<number, Signup>>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [b, s] = await Promise.all([
-          creditsApi.balance(),
-          calendarApi.my(),
-        ]);
-        setBalance(b);
-        setSessions(s.slice(0, 5));
-      } catch {
-        // silent
-      } finally {
-        setLoading(false);
-      }
+  async function load() {
+    try {
+      const [b, s, signups] = await Promise.all([
+        creditsApi.balance(),
+        calendarApi.my(),
+        signupsApi.my(),
+      ]);
+      setBalance(b);
+      setSessions(s.slice(0, 5));
+      const map: Record<number, Signup> = {};
+      signups.forEach((sg) => { map[sg.session_id] = sg; });
+      setMySignups(map);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     load();
   }, []);
+
+  async function handleConfirm(sessionId: number) {
+    const signup = mySignups[sessionId];
+    if (!signup) return;
+    try {
+      await signupsApi.confirm(signup.id);
+      showToast('Участие подтверждено!', 'success');
+      await load();
+    } catch {
+      showToast('Не удалось подтвердить', 'error');
+    }
+  }
+
+  async function handleDecline(sessionId: number) {
+    const signup = mySignups[sessionId];
+    if (!signup) return;
+    try {
+      await signupsApi.cancel(signup.id);
+      showToast('Отказано', 'info');
+      await load();
+    } catch {
+      showToast('Не удалось отказаться', 'error');
+    }
+  }
 
   if (loading) return <Loader />;
 
@@ -82,7 +115,7 @@ export function HomePage() {
               <div
                 key={entry.session_id}
                 className={`card ${styles.sessionCard}`}
-                onClick={() => navigate(`/campaign/${entry.campaign_id}`)}
+                onClick={() => navigate(entry.is_gm ? `/gm/sessions/${entry.session_id}` : `/sessions/${entry.session_id}`)}
               >
                 <div className={styles.sessionTop}>
                   <div className={styles.sessionDate}>
@@ -110,6 +143,26 @@ export function HomePage() {
                 <div className={styles.sessionMeta}>
                   🚪 {entry.room_name} · 👥 {entry.confirmed_count}/{entry.capacity}
                 </div>
+
+                {entry.signup_status === 'pending' && (
+                  <div
+                    style={{ display: 'flex', gap: '8px', marginTop: '8px' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleConfirm(entry.session_id)}
+                    >
+                      Подтвердить
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDecline(entry.session_id)}
+                    >
+                      Отказаться
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

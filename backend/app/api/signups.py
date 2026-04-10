@@ -14,6 +14,7 @@ from app.services.signup_service import (
     cancel_signup,
     approve_offered,
     reject_offered,
+    confirm_pending_signup,
 )
 from app.bot import notifications as notify
 
@@ -87,10 +88,14 @@ async def cancel_my_signup(
             detail="Signup not found",
         )
 
-    if signup.status == SignupStatus.cancelled:
+    if signup.status not in (
+        SignupStatus.pending,
+        SignupStatus.confirmed,
+        SignupStatus.waitlist,
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already cancelled",
+            detail="Cannot cancel this signup",
         )
 
     signup = await cancel_signup(db, signup)
@@ -120,6 +125,31 @@ async def cancel_my_signup(
                     campaign.title,
                     session.id,
                 )
+
+    return signup
+
+
+@router.post("/{signup_id}/confirm", response_model=SignupRead)
+async def confirm_my_signup(
+    signup_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Confirm a pending auto-signup."""
+    signup = await db.get(Signup, signup_id)
+    if not signup or signup.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Signup not found",
+        )
+
+    try:
+        signup = await confirm_pending_signup(db, signup)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
     return signup
 

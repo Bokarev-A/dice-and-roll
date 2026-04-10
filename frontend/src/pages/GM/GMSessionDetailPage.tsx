@@ -9,7 +9,7 @@ import { SessionBadge, SignupBadge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
 import { BackButton } from '../../components/UI/BackButton';
-import { formatDateTime, localInputToISO } from '../../utils/format';
+import { formatDateTime, localInputToISO, resolveEndDate } from '../../utils/format';
 import styles from './GM.module.css';
 
 export function GMSessionDetailPage() {
@@ -84,12 +84,11 @@ export function GMSessionDetailPage() {
   async function handleSaveEdit() {
     if (!editStartsAt || !editEndsAtTime || !editRoomId) return;
     setSaving(true);
-    const datePart = editStartsAt.split('T')[0];
     try {
       await sessionsApi.update(sessionId, {
         room_id: editRoomId,
         starts_at: localInputToISO(editStartsAt),
-        ends_at: localInputToISO(`${datePart}T${editEndsAtTime}`),
+        ends_at: localInputToISO(`${resolveEndDate(editStartsAt, editEndsAtTime)}T${editEndsAtTime}`),
         capacity: editCapacity,
         description: editDescription.trim() || null,
       });

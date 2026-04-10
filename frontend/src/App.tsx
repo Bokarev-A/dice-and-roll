@@ -12,6 +12,7 @@ import { MySessionsPage } from './pages/MySessions/MySessionsPage';
 import { ShopPage } from './pages/Shop/ShopPage';
 import { PaymentPage } from './pages/Shop/PaymentPage';
 import { CampaignPage } from './pages/Campaign/CampaignPage';
+import { SessionDetailPage } from './pages/Session/SessionDetailPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 
 // GM pages
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/shop/pay/:orderId" element={<PaymentPage />} />
         <Route path="/campaign/:id" element={<CampaignPage />} />
+        <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
 
         {isGM && (

@@ -38,7 +38,10 @@ async def lifespan(app: FastAPI):
     start_scheduler()
     if settings.WEBHOOK_URL:
         from app.bot.notifications import register_webhook
-        await register_webhook()
+        try:
+            await register_webhook()
+        except Exception as exc:
+            logger.warning("Could not register Telegram webhook (will retry later): %s", exc)
     yield
     logger.info("Shutting down Dice&Roll API...")
     stop_scheduler()

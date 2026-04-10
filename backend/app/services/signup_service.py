@@ -5,7 +5,71 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.signup import Signup, SignupStatus
 from app.models.session import GameSession
-from app.models.campaign import Campaign, CampaignMember, CampaignType
+from app.models.campaign import Campaign, CampaignMember, CampaignType, CampaignMemberStatus
+
+
+async def auto_signup_members(db: AsyncSession, session: GameSession):
+    """
+    Auto-enroll all active campaign members with pending status when a session is created.
+    Skips members who already have a signup for this session.
+    """
+    result = await db.execute(
+        select(CampaignMember).where(
+            and_(
+                CampaignMember.campaign_id == session.campaign_id,
+                CampaignMember.status == CampaignMemberStatus.active,
+            )
+        )
+    )
+    members = result.scalars().all()
+    for member in members:
+        existing = await db.execute(
+            select(Signup).where(
+                and_(
+                    Signup.session_id == session.id,
+                    Signup.user_id == member.user_id,
+                )
+            )
+        )
+        if existing.scalar_one_or_none():
+            continue
+        db.add(Signup(
+            session_id=session.id,
+            user_id=member.user_id,
+            status=SignupStatus.pending,
+        ))
+    await db.commit()
+
+
+async def confirm_pending_signup(db: AsyncSession, signup: Signup) -> Signup:
+    """
+    Player confirms their pending auto-signup.
+    Assigns confirmed if capacity allows, otherwise waitlist.
+    """
+    if signup.status != SignupStatus.pending:
+        raise ValueError("Signup не в статусе pending")
+
+    confirmed_count = await get_confirmed_count(db, signup.session_id)
+    session = await db.get(GameSession, signup.session_id)
+
+    if confirmed_count < session.capacity:
+        signup.status = SignupStatus.confirmed
+        signup.waitlist_position = None
+    else:
+        signup.status = SignupStatus.waitlist
+        max_pos_result = await db.execute(
+            select(func.max(Signup.waitlist_position)).where(
+                and_(
+                    Signup.session_id == signup.session_id,
+                    Signup.status == SignupStatus.waitlist,
+                )
+            )
+        )
+        signup.waitlist_position = (max_pos_result.scalar() or 0) + 1
+
+    await db.commit()
+    await db.refresh(signup)
+    return signup
 
 
 async def check_campaign_access(
@@ -28,6 +92,7 @@ async def check_campaign_access(
             and_(
                 CampaignMember.campaign_id == session.campaign_id,
                 CampaignMember.user_id == user_id,
+                CampaignMember.status == CampaignMemberStatus.active,
             )
         )
     )
@@ -50,6 +115,7 @@ async def auto_join_oneshot(
         member = CampaignMember(
             campaign_id=campaign_id,
             user_id=user_id,
+            status=CampaignMemberStatus.active,
         )
         db.add(member)
 

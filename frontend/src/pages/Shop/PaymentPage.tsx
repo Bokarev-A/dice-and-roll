@@ -17,6 +17,7 @@ export function PaymentPage() {
   const [qr, setQR] = useState<QRPaymentInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -50,23 +51,28 @@ export function PaymentPage() {
 
   async function handleMarkPaid() {
     if (!order) return;
+    setActionLoading(true);
     try {
       const updated = await ordersApi.markPaid(order.id);
       setOrder(updated);
       showToast('Отмечено как оплачено!', 'success');
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    } finally {
+      setActionLoading(false);
     }
   }
 
   async function handleCancel() {
     if (!order) return;
+    setActionLoading(true);
     try {
       await ordersApi.cancel(order.id);
       showToast('Заказ отменён', 'info');
       navigate('/shop');
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
+      setActionLoading(false);
     }
   }
 
@@ -133,11 +139,19 @@ export function PaymentPage() {
             )}
           </div>
 
-          <button className="btn btn-primary btn-block" onClick={handleMarkPaid}>
-            ✓ Я оплатил
+          <button
+            className="btn btn-primary btn-block"
+            onClick={handleMarkPaid}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Отправка...' : '✓ Я оплатил'}
           </button>
 
-          <button className="btn btn-danger btn-block" onClick={handleCancel}>
+          <button
+            className="btn btn-danger btn-block"
+            onClick={handleCancel}
+            disabled={actionLoading}
+          >
             Отменить заказ
           </button>
         </>

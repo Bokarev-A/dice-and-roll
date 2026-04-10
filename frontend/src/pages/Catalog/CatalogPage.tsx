@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { calendarApi } from '../../api/calendar';
 import { campaignsApi } from '../../api/campaigns';
-import type { PublicSessionEntry, Campaign } from '../../types/index';
+import type { Campaign } from '../../types/index';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useUIStore } from '../../store/useUIStore';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
 import { CampaignCard } from '../../components/Campaign/CampaignCard';
-import { formatDate, formatTime } from '../../utils/format';
 import styles from './CatalogPage.module.css';
 
 type Tab = 'oneshots' | 'campaigns' | 'mine';
@@ -20,7 +18,7 @@ export function CatalogPage() {
   const isGM = user?.role === 'gm' || user?.role === 'admin';
 
   const [tab, setTab] = useState<Tab>('oneshots');
-  const [sessions, setSessions] = useState<PublicSessionEntry[]>([]);
+  const [oneshots, setOneshots] = useState<Campaign[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [mineCampaigns, setMineCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,8 +36,8 @@ export function CatalogPage() {
       setLoading(true);
       try {
         if (tab === 'oneshots') {
-          const data = await calendarApi.public();
-          setSessions(data);
+          const data = await campaignsApi.list();
+          setOneshots(data.filter((c) => c.type === 'oneshot'));
         } else if (tab === 'campaigns') {
           const data = await campaignsApi.list();
           setCampaigns(data.filter((c) => c.type === 'campaign'));
@@ -111,40 +109,16 @@ export function CatalogPage() {
       {loading ? (
         <Loader />
       ) : tab === 'oneshots' ? (
-        sessions.length === 0 ? (
+        oneshots.length === 0 ? (
           <Empty icon="🎲" title="Нет доступных ваншотов" subtitle="Загляните позже!" />
         ) : (
           <div className={styles.list}>
-            {sessions.map((s) => (
-              <div
-                key={s.session_id}
-                className={`card ${styles.oneshotCard}`}
-                onClick={() => navigate(`/campaign/${s.campaign_id}`)}
-              >
-                <div className={styles.oneshotHeader}>
-                  <div>
-                    <span className={styles.oneshotDate}>
-                      {formatDate(s.starts_at)}
-                    </span>
-                    <span className={styles.oneshotTime}>
-                      {formatTime(s.starts_at)} — {formatTime(s.ends_at)}
-                    </span>
-                  </div>
-                  <span className={styles.spots}>
-                    {s.spots_left} мест
-                  </span>
-                </div>
-
-                <h3 className={styles.oneshotTitle}>{s.campaign_title}</h3>
-
-                {s.system && (
-                  <div className={styles.system}>{s.system}</div>
-                )}
-
-                <div className={styles.oneshotMeta}>
-                  🚪 {s.room_name} · 👥 {s.confirmed_count}/{s.capacity}
-                </div>
-              </div>
+            {oneshots.map((c) => (
+              <CampaignCard
+                key={c.id}
+                campaign={c}
+                onClick={() => navigate(`/campaign/${c.id}`)}
+              />
             ))}
           </div>
         )

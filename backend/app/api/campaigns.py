@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.models.campaign import (
-    Campaign, CampaignMember, CampaignStatus, CampaignVisibility,
+    Campaign, CampaignMember, CampaignStatus, CampaignVisibility, CampaignMemberStatus,
 )
 from app.schemas.campaign import (
     CampaignCreate, CampaignUpdate, CampaignRead, CampaignMemberRead,
@@ -26,6 +26,7 @@ async def campaigns_with_counts(
             CampaignMember.campaign_id,
             sa_func.count().label("cnt"),
         )
+        .where(CampaignMember.status == CampaignMemberStatus.active)
         .group_by(CampaignMember.campaign_id)
         .subquery()
     )
@@ -101,7 +102,12 @@ async def list_joined_campaigns(
     """List campaigns the current user has joined as a member."""
     result = await db.execute(
         select(CampaignMember.campaign_id)
-        .where(CampaignMember.user_id == current_user.id)
+        .where(
+            and_(
+                CampaignMember.user_id == current_user.id,
+                CampaignMember.status == CampaignMemberStatus.active,
+            )
+        )
     )
     campaign_ids = [row[0] for row in result.all()]
     if not campaign_ids:
@@ -227,6 +233,7 @@ async def list_members(
             id=member.id,
             campaign_id=member.campaign_id,
             user_id=member.user_id,
+            status=member.status,
             joined_at=member.joined_at,
             first_name=user.first_name,
             last_name=user.last_name,
@@ -272,6 +279,7 @@ async def join_campaign(
     member = CampaignMember(
         campaign_id=campaign_id,
         user_id=current_user.id,
+        status=CampaignMemberStatus.pending,
     )
     db.add(member)
     await db.commit()
@@ -280,11 +288,17 @@ async def join_campaign(
     gm = await db.get(User, campaign.owner_gm_user_id)
     if gm:
         player_name = f"{current_user.first_name} {current_user.last_name or ''}".strip()
-        await notify.notify_new_member(
+        await notify.notify_new_application(
             gm.telegram_id, player_name, campaign.title
         )
 
-    return member
+    return CampaignMemberRead(
+        id=member.id,
+        campaign_id=member.campaign_id,
+        user_id=member.user_id,
+        status=member.status,
+        joined_at=member.joined_at,
+    )
 
 
 @router.post("/{campaign_id}/leave")
@@ -317,3 +331,87 @@ async def leave_campaign(
     await db.commit()
 
     return {"detail": "Left campaign successfully"}
+
+
+@router.post("/{campaign_id}/members/{member_id}/approve", response_model=CampaignMemberRead)
+async def approve_member(
+    campaign_id: int,
+    member_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_gm),
+):
+    """Approve a pending membership application. Owner GM or Admin only."""
+    campaign = await db.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campaign not found")
+
+    if campaign.owner_gm_user_id != current_user.id and current_user.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your campaign")
+
+    result = await db.execute(
+        select(CampaignMember).where(
+            and_(CampaignMember.id == member_id, CampaignMember.campaign_id == campaign_id)
+        )
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    if member.status != CampaignMemberStatus.pending:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Application is not pending")
+
+    member.status = CampaignMemberStatus.active
+    await db.commit()
+    await db.refresh(member)
+
+    player = await db.get(User, member.user_id)
+    if player:
+        await notify.notify_application_approved(player.telegram_id, campaign.title)
+
+    result_user = await db.execute(select(User).where(User.id == member.user_id))
+    user = result_user.scalar_one_or_none()
+    return CampaignMemberRead(
+        id=member.id,
+        campaign_id=member.campaign_id,
+        user_id=member.user_id,
+        status=member.status,
+        joined_at=member.joined_at,
+        first_name=user.first_name if user else None,
+        last_name=user.last_name if user else None,
+        username=user.username if user else None,
+    )
+
+
+@router.post("/{campaign_id}/members/{member_id}/reject")
+async def reject_member(
+    campaign_id: int,
+    member_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_gm),
+):
+    """Reject and remove a pending membership application. Owner GM or Admin only."""
+    campaign = await db.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campaign not found")
+
+    if campaign.owner_gm_user_id != current_user.id and current_user.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your campaign")
+
+    result = await db.execute(
+        select(CampaignMember).where(
+            and_(CampaignMember.id == member_id, CampaignMember.campaign_id == campaign_id)
+        )
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    player_user_id = member.user_id
+    await db.delete(member)
+    await db.commit()
+
+    player = await db.get(User, player_user_id)
+    if player:
+        await notify.notify_application_rejected(player.telegram_id, campaign.title)
+
+    return {"detail": "Application rejected"}

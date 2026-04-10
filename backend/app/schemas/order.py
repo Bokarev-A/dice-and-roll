@@ -13,6 +13,7 @@ class OrderCreate(BaseModel):
 class OrderRead(BaseModel):
     id: int
     user_id: int
+    user_name: Optional[str] = None
     product_id: int
     product_name: str = ""
     amount: float
@@ -41,6 +42,9 @@ class OrderRead(BaseModel):
     def extract_product_name(cls, data):
         if hasattr(data, "product") and data.product:
             data.product_name = data.product.name
+        if hasattr(data, "user") and data.user:
+            u = data.user
+            data.user_name = f"{u.first_name} {u.last_name or ''}".strip() or None
         return data
 
 

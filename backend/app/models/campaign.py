@@ -30,6 +30,11 @@ class CampaignStatus(str, enum.Enum):
     archived = "archived"
 
 
+class CampaignMemberStatus(str, enum.Enum):
+    pending = "pending"
+    active = "active"
+
+
 class Campaign(Base):
     __tablename__ = "campaigns"
 
@@ -78,6 +83,12 @@ class CampaignMember(Base):
     )
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=False
+    )
+    status: Mapped[CampaignMemberStatus] = mapped_column(
+        SAEnum(CampaignMemberStatus),
+        default=CampaignMemberStatus.pending,
+        server_default="pending",
+        nullable=False,
     )
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

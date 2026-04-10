@@ -13,9 +13,10 @@ export function Badge({ text, color }: BadgeProps) {
 
 export function SignupBadge({ status }: { status: SignupStatus }) {
   const map: Record<SignupStatus, { text: string; color: BadgeColor }> = {
+    pending:   { text: 'Ожидает ответа', color: 'yellow' },
     confirmed: { text: 'Подтверждён', color: 'green' },
-    waitlist: { text: 'Лист ожидания', color: 'yellow' },
-    offered: { text: 'Предложено', color: 'purple' },
+    waitlist:  { text: 'Лист ожидания', color: 'yellow' },
+    offered:   { text: 'Предложено', color: 'purple' },
     cancelled: { text: 'Отменён', color: 'orange' },
   };
   const { text, color } = map[status];

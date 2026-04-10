@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models.campaign import CampaignType, CampaignVisibility, CampaignStatus
+from app.models.campaign import CampaignType, CampaignVisibility, CampaignStatus, CampaignMemberStatus
 
 
 class CampaignCreate(BaseModel):
@@ -42,6 +42,7 @@ class CampaignMemberRead(BaseModel):
     id: int
     campaign_id: int
     user_id: int
+    status: CampaignMemberStatus
     joined_at: datetime
     first_name: Optional[str] = None
     last_name: Optional[str] = None

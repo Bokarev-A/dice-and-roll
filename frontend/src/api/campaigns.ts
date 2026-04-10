@@ -29,4 +29,10 @@ export const campaignsApi = {
 
   leave: (id: number) =>
     api.post(`/campaigns/${id}/leave`).then(r => r.data),
+
+  approveMember: (campaignId: number, memberId: number) =>
+    api.post<CampaignMember>(`/campaigns/${campaignId}/members/${memberId}/approve`).then(r => r.data),
+
+  rejectMember: (campaignId: number, memberId: number) =>
+    api.post(`/campaigns/${campaignId}/members/${memberId}/reject`).then(r => r.data),
 };

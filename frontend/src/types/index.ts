@@ -40,6 +40,7 @@ export type OrderStatus =
 export type Order = {
   id: number;
   user_id: number;
+  user_name?: string;
   product_id: number;
   product_name: string;
   amount: number;
@@ -120,10 +121,13 @@ export type Campaign = {
   created_at: string;
 };
 
+export type CampaignMemberStatus = 'pending' | 'active';
+
 export type CampaignMember = {
   id: number;
   campaign_id: number;
   user_id: number;
+  status: CampaignMemberStatus;
   joined_at: string;
   first_name?: string;
   last_name?: string;
@@ -148,7 +152,7 @@ export type GameSession = {
   created_at: string;
 };
 
-export type SignupStatus = 'confirmed' | 'waitlist' | 'offered' | 'cancelled';
+export type SignupStatus = 'pending' | 'confirmed' | 'waitlist' | 'offered' | 'cancelled';
 
 export type Signup = {
   id: number;

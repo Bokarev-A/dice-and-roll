@@ -11,9 +11,10 @@ from app.database import Base
 
 
 class SignupStatus(str, enum.Enum):
+    pending   = "pending"
     confirmed = "confirmed"
-    waitlist = "waitlist"
-    offered = "offered"
+    waitlist  = "waitlist"
+    offered   = "offered"
     cancelled = "cancelled"
 
 

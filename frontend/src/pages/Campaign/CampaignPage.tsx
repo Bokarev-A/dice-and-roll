@@ -12,7 +12,7 @@ import { Badge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
 import { BackButton } from '../../components/UI/BackButton';
-import { localInputToISO } from '../../utils/format';
+import { localInputToISO, resolveEndDate } from '../../utils/format';
 import styles from './CampaignPage.module.css';
 
 export function CampaignPage() {
@@ -39,7 +39,8 @@ export function CampaignPage() {
   const [creating, setCreating] = useState(false);
 
   const campaignId = Number(id);
-  const isMember = members.some((m) => m.user_id === user?.id);
+  const isMember = members.some((m) => m.user_id === user?.id && m.status === 'active');
+  const hasPendingApp = members.some((m) => m.user_id === user?.id && m.status === 'pending');
   const isOwnerGM = campaign?.owner_gm_user_id === user?.id;
   const isGMOrAdmin = user?.role === 'gm' || user?.role === 'admin';
 
@@ -136,13 +137,12 @@ export function CampaignPage() {
   async function handleCreateSession() {
     if (!startsAt || !endsAtTime || !roomId) return;
     setCreating(true);
-    const datePart = startsAt.split('T')[0];
     try {
       await sessionsApi.create({
         campaign_id: campaignId,
         room_id: roomId,
         starts_at: localInputToISO(startsAt),
-        ends_at: localInputToISO(`${datePart}T${endsAtTime}`),
+        ends_at: localInputToISO(`${resolveEndDate(startsAt, endsAtTime)}T${endsAtTime}`),
         capacity,
         description: sessionDescription.trim() || undefined,
       });
@@ -199,21 +199,34 @@ export function CampaignPage() {
 
       {/* Join / Leave (non-owner players) */}
       {!isOwnerGM && (
-        !isMember ? (
-          <button
-            className="btn btn-primary btn-block"
-            onClick={handleJoin}
-            disabled={actionLoading}
-          >
-            Присоединиться
-          </button>
-        ) : (
+        isMember ? (
           <button
             className="btn btn-danger btn-block"
             onClick={handleLeave}
             disabled={actionLoading}
           >
             Покинуть кампанию
+          </button>
+        ) : hasPendingApp ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button className="btn btn-secondary btn-block" disabled>
+              ⏳ На рассмотрении
+            </button>
+            <button
+              className="btn btn-danger btn-block"
+              onClick={handleLeave}
+              disabled={actionLoading}
+            >
+              Отозвать заявку
+            </button>
+          </div>
+        ) : (
+          <button
+            className="btn btn-primary btn-block"
+            onClick={handleJoin}
+            disabled={actionLoading}
+          >
+            Подать заявку
           </button>
         )
       )}
@@ -226,7 +239,7 @@ export function CampaignPage() {
         <Empty icon="👥" title="Нет участников" />
       ) : (
         <div className={styles.memberList}>
-          {members.map((m) => {
+          {members.filter((m) => m.status === 'active').map((m) => {
             const displayName = [m.first_name, m.last_name].filter(Boolean).join(' ');
             return (
               <div key={m.id} className={styles.memberItem}>
@@ -336,7 +349,7 @@ export function CampaignPage() {
               <SessionCard
                 session={s}
                 showCampaign={false}
-                onClick={isOwnerGM ? () => navigate(`/gm/sessions/${s.id}`) : undefined}
+                onClick={() => navigate(isOwnerGM ? `/gm/sessions/${s.id}` : `/sessions/${s.id}`)}
               />
               {!isOwnerGM && isMember && (() => {
                 const alreadySignedUp = mySignups.includes(s.id);

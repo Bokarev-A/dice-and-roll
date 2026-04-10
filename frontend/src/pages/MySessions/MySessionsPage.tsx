@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { calendarApi } from '../../api/calendar';
 import { signupsApi } from '../../api/signups';
-import type { CalendarEntry } from '../../types/index';
+import type { CalendarEntry, Signup } from '../../types/index';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
 import { SignupBadge } from '../../components/UI/Badge';
@@ -14,7 +14,7 @@ export function MySessionsPage() {
   const navigate = useNavigate();
   const showToast = useUIStore((s) => s.showToast);
   const [sessions, setSessions] = useState<CalendarEntry[]>([]);
-  const [mySignups, setMySignups] = useState<Record<number, number>>({});
+  const [mySignups, setMySignups] = useState<Record<number, Signup>>({});
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -25,9 +25,9 @@ export function MySessionsPage() {
       ]);
       setSessions(cal);
 
-      const map: Record<number, number> = {};
+      const map: Record<number, Signup> = {};
       signups.forEach((s) => {
-        map[s.session_id] = s.id;
+        map[s.session_id] = s;
       });
       setMySignups(map);
     } catch {
@@ -41,13 +41,24 @@ export function MySessionsPage() {
     load();
   }, []);
 
-  async function handleCancel(sessionId: number) {
-    const signupId = mySignups[sessionId];
-    if (!signupId) return;
-
+  async function handleConfirm(sessionId: number) {
+    const signup = mySignups[sessionId];
+    if (!signup) return;
     try {
-      await signupsApi.cancel(signupId);
-      showToast('Запись отменена', 'success');
+      await signupsApi.confirm(signup.id);
+      showToast('Участие подтверждено!', 'success');
+      await load();
+    } catch {
+      showToast('Не удалось подтвердить', 'error');
+    }
+  }
+
+  async function handleCancel(sessionId: number) {
+    const signup = mySignups[sessionId];
+    if (!signup) return;
+    try {
+      await signupsApi.cancel(signup.id);
+      showToast(signup.status === 'pending' ? 'Отказано' : 'Запись отменена', 'success');
       await load();
     } catch {
       showToast('Не удалось отменить', 'error');
@@ -86,7 +97,7 @@ export function MySessionsPage() {
 
               <div
                 className={styles.title}
-                onClick={() => navigate(`/campaign/${entry.campaign_id}`)}
+                onClick={() => navigate(entry.is_gm ? `/gm/sessions/${entry.session_id}` : `/sessions/${entry.session_id}`)}
               >
                 {entry.campaign_title}
               </div>
@@ -100,6 +111,23 @@ export function MySessionsPage() {
               <div className={styles.meta}>
                 🚪 {entry.room_name} · 👥 {entry.confirmed_count}/{entry.capacity}
               </div>
+
+              {entry.signup_status === 'pending' && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handleConfirm(entry.session_id)}
+                  >
+                    Подтвердить
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleCancel(entry.session_id)}
+                  >
+                    Отказаться
+                  </button>
+                </div>
+              )}
 
               {(entry.signup_status === 'confirmed' ||
                 entry.signup_status === 'waitlist') && (

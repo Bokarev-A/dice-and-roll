@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     MINI_APP_URL: str = ""
 
     SKIP_TG_VALIDATION: bool = False
+    TELEGRAM_PROXY: str = ""  # e.g. http://user:pass@host:port or socks5://host:port
 
     @property
     def reminder_hours(self) -> List[int]:

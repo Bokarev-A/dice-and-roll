@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, or_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -189,6 +190,7 @@ async def list_pending_orders(
     """List orders awaiting confirmation. Admin only."""
     result = await db.execute(
         select(Order)
+        .options(selectinload(Order.user))
         .where(Order.status == OrderStatus.awaiting_confirmation)
         .order_by(Order.paid_at.asc())
     )
@@ -202,7 +204,7 @@ async def list_all_orders(
     current_user: User = Depends(require_admin),
 ):
     """List all orders with optional status filter. Admin only."""
-    query = select(Order).order_by(Order.created_at.desc())
+    query = select(Order).options(selectinload(Order.user)).order_by(Order.created_at.desc())
     if status_filter:
         query = query.where(Order.status == status_filter)
 

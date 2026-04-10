@@ -62,3 +62,21 @@ export function pluralGames(count: number): string {
 export function localInputToISO(value: string): string {
   return value + ':00+03:00';
 }
+
+/**
+ * Given a start datetime-local string and an end time string (HH:MM),
+ * returns the correct date part for ends_at — bumps to next day if end
+ * time is earlier than start time (session goes past midnight).
+ * "2026-03-28T22:00", "02:00" → "2026-03-29"
+ * "2026-03-28T18:00", "22:00" → "2026-03-28"
+ */
+export function resolveEndDate(startsAtInput: string, endsAtTime: string): string {
+  const datePart = startsAtInput.split('T')[0];
+  const startTime = startsAtInput.split('T')[1]?.slice(0, 5) ?? '00:00';
+  if (endsAtTime < startTime) {
+    const d = new Date(`${datePart}T00:00:00`);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }
+  return datePart;
+}

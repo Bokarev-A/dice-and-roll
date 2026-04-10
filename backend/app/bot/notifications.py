@@ -10,6 +10,14 @@ logger = logging.getLogger(__name__)
 BOT_API_URL = f"https://api.telegram.org/bot{settings.BOT_TOKEN}"
 
 
+def _tg_client(timeout: int = 10) -> httpx.AsyncClient:
+    """Create an httpx client with optional proxy from settings."""
+    kwargs: dict = {"timeout": timeout}
+    if settings.TELEGRAM_PROXY:
+        kwargs["proxies"] = settings.TELEGRAM_PROXY
+    return httpx.AsyncClient(**kwargs)
+
+
 async def send_message(
     chat_id: int,
     text: str,
@@ -27,7 +35,7 @@ async def send_message(
 
     for attempt in range(3):
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
+            async with _tg_client(timeout=10) as client:
                 resp = await client.post(
                     f"{BOT_API_URL}/sendMessage", json=payload
                 )
@@ -222,17 +230,39 @@ async def notify_signup_confirmed(
 # ── Campaign notifications ───────────────────────────────────────
 
 
-async def notify_new_member(
+async def notify_new_application(
     gm_telegram_id: int,
     player_name: str,
     campaign_title: str,
 ):
     text = (
-        f"👤 <b>Новый участник</b>\n\n"
+        f"📋 <b>Новая заявка на вступление</b>\n\n"
         f"Игрок: {player_name}\n"
         f"Кампания: {campaign_title}"
     )
     await send_message(gm_telegram_id, text)
+
+
+async def notify_application_approved(
+    player_telegram_id: int,
+    campaign_title: str,
+):
+    text = (
+        f"✅ <b>Заявка одобрена</b>\n\n"
+        f"Ваша заявка на вступление в кампанию «{campaign_title}» одобрена!"
+    )
+    await send_message(player_telegram_id, text)
+
+
+async def notify_application_rejected(
+    player_telegram_id: int,
+    campaign_title: str,
+):
+    text = (
+        f"❌ <b>Заявка отклонена</b>\n\n"
+        f"Ваша заявка на вступление в кампанию «{campaign_title}» была отклонена."
+    )
+    await send_message(player_telegram_id, text)
 
 
 # ── Attendance notifications ─────────────────────────────────────
@@ -392,7 +422,7 @@ async def register_webhook() -> None:
     import logging
     logger = logging.getLogger(__name__)
 
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with _tg_client(timeout=10) as client:
         resp = await client.post(f"{BOT_API_URL}/setWebhook", json=payload)
     if resp.status_code == 200 and resp.json().get("ok"):
         logger.info("Telegram webhook registered: %s", settings.WEBHOOK_URL)

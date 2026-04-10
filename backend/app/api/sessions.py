@@ -12,7 +12,7 @@ from app.models.room import Room
 from app.models.signup import Signup, SignupStatus
 from app.schemas.session import SessionCreate, SessionUpdate, SessionRead
 from app.api.deps import get_current_user, require_gm
-from app.services.signup_service import get_confirmed_count, get_waitlist_count, process_waitlist
+from app.services.signup_service import get_confirmed_count, get_waitlist_count, process_waitlist, auto_signup_members
 from app.services.notification_service import (
     notify_session_participants,
     notify_campaign_members_new_session,
@@ -184,6 +184,9 @@ async def create_session(
     db.add(session)
     await db.commit()
     await db.refresh(session)
+
+    # Auto-enroll active campaign members
+    await auto_signup_members(db, session)
 
     # Notify campaign members
     await notify_campaign_members_new_session(db, session)

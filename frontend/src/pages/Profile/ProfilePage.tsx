@@ -51,7 +51,15 @@ export function ProfilePage() {
       {/* Profile header */}
       <div className={styles.profileHeader}>
         <div className={styles.avatar}>
-          {user?.first_name?.charAt(0) || '?'}
+          {user?.photo_url ? (
+            <img
+              src={user.photo_url}
+              alt={user.first_name}
+              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+            />
+          ) : (
+            user?.first_name?.charAt(0) || '?'
+          )}
         </div>
         <div className={styles.info}>
           <h1 className={styles.name}>

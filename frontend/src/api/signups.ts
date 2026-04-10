@@ -7,6 +7,9 @@ export const signupsApi = {
 
   my: () => api.get<Signup[]>('/signups/my').then(r => r.data),
 
+  confirm: (signupId: number) =>
+    api.post<Signup>(`/signups/${signupId}/confirm`).then(r => r.data),
+
   cancel: (signupId: number) =>
     api.post<Signup>(`/signups/${signupId}/cancel`).then(r => r.data),
 
