@@ -110,6 +110,26 @@ export function CampaignPage() {
     }
   }
 
+  async function handleApprove(memberId: number) {
+    try {
+      await campaignsApi.approveMember(campaignId, memberId);
+      showToast('Заявка одобрена', 'success');
+      await load();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    }
+  }
+
+  async function handleReject(memberId: number) {
+    try {
+      await campaignsApi.rejectMember(campaignId, memberId);
+      showToast('Заявка отклонена', 'info');
+      await load();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    }
+  }
+
   async function handleSignup(sessionId: number) {
     try {
       await signupsApi.create(sessionId);
@@ -233,25 +253,67 @@ export function CampaignPage() {
 
       <hr className="divider" />
 
+      {/* Pending applications — GM owner only */}
+      {isOwnerGM && (() => {
+        const pending = members.filter((m) => m.status === 'pending');
+        if (pending.length === 0) return null;
+        return (
+          <>
+            <h2>Заявки ({pending.length})</h2>
+            <div className={styles.memberList}>
+              {pending.map((m) => {
+                const displayName = [m.first_name, m.last_name].filter(Boolean).join(' ') || `Игрок #${m.user_id}`;
+                return (
+                  <div key={m.id} className={styles.memberItem}>
+                    <div>
+                      <span className={styles.memberName}>{displayName}</span>
+                      {m.username && (
+                        <span className={styles.memberUsername} style={{ marginLeft: '8px' }}>@{m.username}</span>
+                      )}
+                    </div>
+                    <div className={styles.applicationActions}>
+                      <button className="btn btn-success btn-sm" onClick={() => handleApprove(m.id)}>
+                        ✓
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleReject(m.id)}>
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <hr className="divider" />
+          </>
+        );
+      })()}
+
       {/* Members */}
-      <h2>Участники</h2>
-      {members.length === 0 ? (
-        <Empty icon="👥" title="Нет участников" />
-      ) : (
-        <div className={styles.memberList}>
-          {members.filter((m) => m.status === 'active').map((m) => {
-            const displayName = [m.first_name, m.last_name].filter(Boolean).join(' ');
-            return (
-              <div key={m.id} className={styles.memberItem}>
-                <span className={styles.memberName}>{displayName}</span>
-                {m.username && (
-                  <span className={styles.memberUsername}>@{m.username}</span>
-                )}
+      {(() => {
+        const active = members.filter((m) => m.status === 'active');
+        return (
+          <>
+            <h2>Участники</h2>
+            {active.length === 0 ? (
+              <Empty icon="👥" title="Нет участников" />
+            ) : (
+              <div className={styles.memberList}>
+                {active.map((m) => {
+                  const displayName = [m.first_name, m.last_name].filter(Boolean).join(' ');
+                  return (
+                    <div key={m.id} className={styles.memberItem}>
+                      <span className={styles.memberName}>{displayName}</span>
+                      {m.username && (
+                        <span className={styles.memberUsername}>@{m.username}</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+          </>
+        );
+      })()}
 
       <hr className="divider" />
 

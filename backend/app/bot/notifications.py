@@ -7,7 +7,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-BOT_API_URL = f"https://api.telegram.org/bot{settings.BOT_TOKEN}"
+BOT_API_URL = f"{settings.TELEGRAM_BOT_API_URL}/bot{settings.BOT_TOKEN}"
 
 
 def _tg_client(timeout: int = 10) -> httpx.AsyncClient:

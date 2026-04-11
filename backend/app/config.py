@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     WEBHOOK_SECRET: str = ""
     MINI_APP_URL: str = ""
 
+    # Local Telegram Bot API server (leave default to use api.telegram.org)
+    TELEGRAM_BOT_API_URL: str = "https://api.telegram.org"
+
     SKIP_TG_VALIDATION: bool = False
     TELEGRAM_PROXY: str = ""  # e.g. http://user:pass@host:port or socks5://host:port
 

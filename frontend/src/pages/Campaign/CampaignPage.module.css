@@ -121,6 +121,12 @@
   letter-spacing: 0.1em;
 }
 
+.applicationActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .sessionList {
   display: flex;
   flex-direction: column;
