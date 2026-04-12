@@ -43,7 +43,8 @@ export function ProfilePage() {
 
   if (loading) return <Loader />;
 
-  const isGmOrAdmin = user?.role === 'gm' || user?.role === 'admin';
+  const showRentals = user?.role === 'private_gm' || user?.role === 'admin';
+  const showGmRewards = user?.role === 'gm' || user?.role === 'admin';
   const hasGmRewards = (balance?.total_gm_rewards || 0) > 0;
 
   return (
@@ -68,8 +69,8 @@ export function ProfilePage() {
           {user?.username && (
             <span className={styles.username}>@{user.username}</span>
           )}
-          <span className={`badge badge-${user?.role === 'admin' ? 'pink' : user?.role === 'gm' ? 'purple' : 'blue'}`}>
-            {user?.role === 'admin' ? 'Админ' : user?.role === 'gm' ? 'Мастер' : 'Игрок'}
+          <span className={`badge badge-${user?.role === 'admin' ? 'pink' : user?.role === 'gm' ? 'purple' : user?.role === 'private_gm' ? 'teal' : 'blue'}`}>
+            {user?.role === 'admin' ? 'Админ' : user?.role === 'gm' ? 'Мастер' : user?.role === 'private_gm' ? 'Частный ГМ' : 'Игрок'}
           </span>
         </div>
       </div>
@@ -79,8 +80,8 @@ export function ProfilePage() {
         totalCredits={balance?.total_credits || 0}
         totalRentals={balance?.total_rentals || 0}
         totalGmRewards={balance?.total_gm_rewards || 0}
-        showRentals={isGmOrAdmin}
-        showGmRewards={isGmOrAdmin || hasGmRewards}
+        showRentals={showRentals}
+        showGmRewards={showGmRewards || hasGmRewards}
       />
 
       {/* Tabs */}
@@ -102,30 +103,36 @@ export function ProfilePage() {
           <h3 className={styles.sectionTitle}>
             <span className={styles.emoji}>💎</span> КРЕДИТЫ
           </h3>
-          {balance.credit_batches.length === 0 ? (
+          {balance.credit_batches.filter((b) => b.remaining > 0).length === 0 &&
+           !balance.credit_batches.some((b) => b.remaining < 0) ? (
             <p className={styles.empty}>Нет активных кредитов</p>
           ) : (
-            balance.credit_batches.map((b) => (
-              <div key={b.id} className={`card ${styles.batchCard}`}>
-                <div className={styles.batchHeader}>
-                  <span className={styles.batchCredits}>
-                    {b.remaining}/{b.total}
-                  </span>
-                  <span className={`badge badge-${b.status === 'active' ? 'green' : 'orange'}`}>
-                    {b.status}
-                  </span>
-                </div>
-                <div className={styles.batchMeta}>
-                  Куплено: {formatDate(b.purchased_at)}
-                  {b.expires_at && (
-                    <> · Истекает: {formatDate(b.expires_at)}</>
+            balance.credit_batches.map((b) => {
+              const isDebt = b.remaining < 0;
+              return (
+                <div key={b.id} className={`card ${isDebt ? styles.debtCard : styles.batchCard}`}>
+                  <div className={styles.batchHeader}>
+                    <span className={isDebt ? styles.debtCredits : styles.batchCredits}>
+                      {isDebt ? `Долг: ${Math.abs(b.remaining)} кр.` : `${b.remaining}/${b.total}`}
+                    </span>
+                    <span className={`badge ${isDebt ? 'badge-red' : `badge-${b.status === 'active' ? 'green' : 'orange'}`}`}>
+                      {isDebt ? 'долг' : b.status}
+                    </span>
+                  </div>
+                  {!isDebt && (
+                    <div className={styles.batchMeta}>
+                      Куплено: {formatDate(b.purchased_at)}
+                      {b.expires_at && (
+                        <> · Истекает: {formatDate(b.expires_at)}</>
+                      )}
+                    </div>
                   )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
-          {isGmOrAdmin && (
+          {showRentals && (
             <>
               <h3 className={styles.sectionTitle}>
                 <span className={styles.emoji}>🏠</span> АРЕНДЫ
@@ -155,7 +162,7 @@ export function ProfilePage() {
             </>
           )}
 
-          {(isGmOrAdmin || hasGmRewards) && (
+          {(showGmRewards || hasGmRewards) && (
             <>
               <h3 className={styles.sectionTitle}>
                 <span className={styles.emoji}>⭐</span> МАСТЕРСКИЕ КРЕДИТЫ

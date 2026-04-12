@@ -118,8 +118,11 @@ export function AttendancePage() {
                 </span>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   <AttendanceBadge status={att.status} />
+                  {att.status === 'attended' && !att.unpaid && (
+                    <span className="badge badge-green">💳 Списан</span>
+                  )}
                   {att.unpaid && (
-                    <span className="badge badge-orange">Не оплачено</span>
+                    <span className="badge badge-orange">⚠ Не оплачено</span>
                   )}
                 </div>
               </div>

@@ -72,7 +72,7 @@ async def my_calendar(
     seen_session_ids: set[int] = set()
 
     # 1) GM sessions — sessions from campaigns owned by this user
-    if current_user.role in (UserRole.gm, UserRole.admin):
+    if current_user.role in (UserRole.gm, UserRole.private_gm, UserRole.admin):
         gm_result = await db.execute(
             select(GameSession)
             .join(Campaign, GameSession.campaign_id == Campaign.id)

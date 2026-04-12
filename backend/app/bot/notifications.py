@@ -268,6 +268,25 @@ async def notify_application_rejected(
 # ── Attendance notifications ─────────────────────────────────────
 
 
+async def notify_admin_player_in_debt(
+    admin_telegram_ids: List[int],
+    player_name: str,
+    player_username: Optional[str],
+    campaign_title: str,
+    gm_name: str,
+):
+    """Notify all admins when a player's balance goes negative after attendance."""
+    username_str = f" (@{player_username})" if player_username else ""
+    text = (
+        f"⚠️ <b>Баланс игрока в минусе</b>\n\n"
+        f"Игрок: {player_name}{username_str}\n"
+        f"Кампания: {campaign_title}\n"
+        f"Мастер: {gm_name}"
+    )
+    for admin_id in admin_telegram_ids:
+        await send_message(admin_id, text)
+
+
 async def notify_unpaid(
     telegram_id: int,
     campaign_title: str,

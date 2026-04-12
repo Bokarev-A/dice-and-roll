@@ -120,10 +120,7 @@ export function OrdersPage() {
                   <span>Кредиты:</span>
                   <span>{formatCredits(order.credits_count)}</span>
                 </div>
-                <div className={styles.orderRow}>
-                  <span>Комментарий:</span>
-                  <span className={styles.comment}>{order.payment_comment}</span>
-                </div>
+
                 <div className={styles.orderRow}>
                   <span>Создан:</span>
                   <span>{formatDateTime(order.created_at)}</span>

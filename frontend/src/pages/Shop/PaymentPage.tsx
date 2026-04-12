@@ -16,7 +16,6 @@ export function PaymentPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [qr, setQR] = useState<QRPaymentInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -37,17 +36,6 @@ export function PaymentPage() {
     }
     load();
   }, [orderId, navigate]);
-
-  async function handleCopyComment(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      showToast('Скопировано!', 'success');
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      showToast('Не удалось скопировать', 'error');
-    }
-  }
 
   async function handleMarkPaid() {
     if (!order) return;
@@ -113,18 +101,9 @@ export function PaymentPage() {
             </div>
 
             <div className={styles.instructions}>
-              <p>1. Отсканируйте QR-код или нажмите кнопку ниже</p>
+              <p>1. Нажмите кнопку "Открыть СБП"</p>
               <p>2. Переведите <strong>{formatPrice(qr.amount)}</strong></p>
-              <p>
-                3. В комментарии укажите: <strong>{qr.payment_comment}</strong>{' '}
-                <span
-                  className={styles.copyLink}
-                  onClick={() => handleCopyComment(qr.payment_comment)}
-                >
-                  ({copied ? '✓ Скопировано' : 'Копировать'})
-                </span>
-              </p>
-              <p>4. Нажмите «Я оплатил»</p>
+              <p>3. Нажмите «Я оплатил»</p>
             </div>
 
             {qr.qr_sbp_link && (

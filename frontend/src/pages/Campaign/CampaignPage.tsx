@@ -42,7 +42,7 @@ export function CampaignPage() {
   const isMember = members.some((m) => m.user_id === user?.id && m.status === 'active');
   const hasPendingApp = members.some((m) => m.user_id === user?.id && m.status === 'pending');
   const isOwnerGM = campaign?.owner_gm_user_id === user?.id;
-  const isGMOrAdmin = user?.role === 'gm' || user?.role === 'admin';
+  const isGMOrAdmin = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
 
   async function load() {
     try {
@@ -182,9 +182,15 @@ export function CampaignPage() {
   if (loading) return <Loader />;
   if (!campaign) return <Empty icon="❌" title="Кампания не найдена" />;
 
-  const futureSessions = sessions.filter(
-    (s) => new Date(s.starts_at) > new Date() && s.status !== 'canceled'
+  const isGMAdmin = isOwnerGM || user?.role === 'admin';
+
+  const upcomingSessions = sessions.filter(
+    (s) => s.status !== 'canceled' && s.status !== 'done' && new Date(s.starts_at) > new Date()
   );
+
+  const pastSessions = sessions.filter(
+    (s) => s.status === 'done' || s.status === 'canceled' || new Date(s.starts_at) <= new Date()
+  ).sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
@@ -212,7 +218,7 @@ export function CampaignPage() {
           <span className={styles.statLabel}>участников</span>
         </div>
         <div className={styles.stat}>
-          <span className={styles.statValue}>{futureSessions.length}</span>
+          <span className={styles.statValue}>{upcomingSessions.length}</span>
           <span className={styles.statLabel}>сессий</span>
         </div>
       </div>
@@ -402,18 +408,18 @@ export function CampaignPage() {
         </div>
       )}
 
-      {futureSessions.length === 0 ? (
+      {upcomingSessions.length === 0 ? (
         <Empty icon="📅" title="Нет предстоящих сессий" />
       ) : (
         <div className={styles.sessionList}>
-          {futureSessions.map((s) => (
+          {upcomingSessions.map((s) => (
             <div key={s.id}>
               <SessionCard
                 session={s}
                 showCampaign={false}
-                onClick={() => navigate(isOwnerGM ? `/gm/sessions/${s.id}` : `/sessions/${s.id}`)}
+                onClick={() => navigate(isGMAdmin ? `/gm/sessions/${s.id}` : `/sessions/${s.id}`)}
               />
-              {!isOwnerGM && isMember && (() => {
+              {!isGMAdmin && isMember && (() => {
                 const alreadySignedUp = mySignups.includes(s.id);
                 if (alreadySignedUp) {
                   return (
@@ -440,6 +446,24 @@ export function CampaignPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Past sessions — visible to GM owner and admin */}
+      {isGMAdmin && pastSessions.length > 0 && (
+        <>
+          <hr className="divider" />
+          <h2>Прошедшие сессии ({pastSessions.length})</h2>
+          <div className={styles.sessionList}>
+            {pastSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                showCampaign={false}
+                onClick={() => navigate(`/gm/sessions/${s.id}`)}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

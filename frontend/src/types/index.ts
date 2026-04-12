@@ -1,4 +1,4 @@
-export type UserRole = 'player' | 'gm' | 'admin';
+export type UserRole = 'player' | 'gm' | 'private_gm' | 'admin';
 
 export type User = {
   id: number;
@@ -16,6 +16,14 @@ export type Room = {
   name: string;
   is_active: boolean;
   created_at: string;
+};
+
+export type RoomMonthlyStats = {
+  room_id: number;
+  room_name: string;
+  sessions_done: number;
+  credits_spent: number;
+  rentals_spent: number;
 };
 
 export type Product = {

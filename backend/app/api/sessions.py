@@ -1,7 +1,8 @@
+import calendar
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -10,8 +11,10 @@ from app.models.session import GameSession, SessionStatus
 from app.models.campaign import Campaign
 from app.models.room import Room
 from app.models.signup import Signup, SignupStatus
+from app.models.credit import CreditBatch, CreditBatchType
+from app.models.ledger import LedgerEntry, LedgerType
 from app.schemas.session import SessionCreate, SessionUpdate, SessionRead
-from app.api.deps import get_current_user, require_gm
+from app.api.deps import get_current_user, require_gm, require_admin
 from app.services.signup_service import get_confirmed_count, get_waitlist_count, process_waitlist, auto_signup_members
 from app.services.notification_service import (
     notify_session_participants,
@@ -274,6 +277,12 @@ async def update_session(
     if time_changed and session.status == SessionStatus.planned:
         session.status = SessionStatus.moved
 
+    # Reset notification flags so GM gets a new 48h confirmation
+    # and players get re-notified when GM confirms the new time
+    if time_changed:
+        session.gm_48h_notified_at = None
+        session.players_confirmed_at = None
+
     await db.commit()
     await db.refresh(session)
 
@@ -312,3 +321,74 @@ async def my_gm_sessions(
     )
     sessions = result.scalars().all()
     return [await session_to_read(db, s) for s in sessions]
+
+
+@router.get("/admin/monthly-stats")
+async def admin_monthly_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Per-room stats for the current calendar month. Admin only."""
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    _, last_day = calendar.monthrange(now.year, now.month)
+    month_end = now.replace(day=last_day, hour=23, minute=59, second=59, microsecond=999999)
+
+    # Completed sessions per room
+    sessions_q = await db.execute(
+        select(GameSession.room_id, func.count(GameSession.id).label("cnt"))
+        .where(
+            GameSession.status == SessionStatus.done,
+            GameSession.starts_at >= month_start,
+            GameSession.starts_at <= month_end,
+        )
+        .group_by(GameSession.room_id)
+    )
+    sessions_by_room = {row.room_id: row.cnt for row in sessions_q}
+
+    # Credits spent per room
+    credits_q = await db.execute(
+        select(GameSession.room_id, func.count(LedgerEntry.id).label("cnt"))
+        .join(GameSession, LedgerEntry.session_id == GameSession.id)
+        .join(CreditBatch, LedgerEntry.credit_batch_id == CreditBatch.id)
+        .where(
+            LedgerEntry.entry_type == LedgerType.debit,
+            CreditBatch.batch_type == CreditBatchType.credit,
+            GameSession.starts_at >= month_start,
+            GameSession.starts_at <= month_end,
+        )
+        .group_by(GameSession.room_id)
+    )
+    credits_by_room = {row.room_id: row.cnt for row in credits_q}
+
+    # Rentals spent per room
+    rentals_q = await db.execute(
+        select(GameSession.room_id, func.count(LedgerEntry.id).label("cnt"))
+        .join(GameSession, LedgerEntry.session_id == GameSession.id)
+        .join(CreditBatch, LedgerEntry.credit_batch_id == CreditBatch.id)
+        .where(
+            LedgerEntry.entry_type == LedgerType.debit,
+            CreditBatch.batch_type == CreditBatchType.rental,
+            GameSession.starts_at >= month_start,
+            GameSession.starts_at <= month_end,
+        )
+        .group_by(GameSession.room_id)
+    )
+    rentals_by_room = {row.room_id: row.cnt for row in rentals_q}
+
+    # All active rooms
+    rooms_result = await db.execute(
+        select(Room).where(Room.is_active == True).order_by(Room.name)
+    )
+    rooms = rooms_result.scalars().all()
+
+    return [
+        {
+            "room_id": room.id,
+            "room_name": room.name,
+            "sessions_done": sessions_by_room.get(room.id, 0),
+            "credits_spent": credits_by_room.get(room.id, 0),
+            "rentals_spent": rentals_by_room.get(room.id, 0),
+        }
+        for room in rooms
+    ]

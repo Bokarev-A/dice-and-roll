@@ -38,7 +38,7 @@ export function NavBar() {
   ];
 
   let navItems = playerNav;
-  if (user?.role === 'gm') navItems = gmNav;
+  if (user?.role === 'gm' || user?.role === 'private_gm') navItems = gmNav;
   if (user?.role === 'admin') navItems = adminNav;
 
   return (

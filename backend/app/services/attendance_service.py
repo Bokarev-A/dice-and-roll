@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.signup import Signup, SignupStatus
 from app.models.session import GameSession, SessionStatus
-from app.services.credit_service import debit_credit
+from app.services.credit_service import debit_credit, debit_credit_as_debt
 
 
 async def create_attendances_for_session(
@@ -53,10 +53,12 @@ async def mark_attendance(
     user_id: int,
     status: AttendanceStatus,
     marked_by: int,
+    skip_debit: bool = False,
 ) -> Attendance:
     """
     Mark attendance for a user at a session.
-    If attended: attempt to debit credit. If no credit: unpaid=True.
+    If attended and not skip_debit: attempt to debit credit. If no credit: unpaid=True.
+    skip_debit=True is used for private-funded campaigns where players don't pay credits.
     """
     # Get or create attendance record
     result = await db.execute(
@@ -84,12 +86,14 @@ async def mark_attendance(
 
     await db.flush()
 
-    # Handle credit debit for attended
-    if status == AttendanceStatus.attended:
+    # Handle credit debit for attended (skipped for private-funded campaigns)
+    if status == AttendanceStatus.attended and not skip_debit:
         ledger_entry = await debit_credit(
             db, user_id, session_id, marked_by
         )
         if ledger_entry is None:
+            # No credits — debit into debt so balance goes negative
+            await debit_credit_as_debt(db, user_id, session_id, marked_by)
             attendance.unpaid = True
 
     await db.commit()

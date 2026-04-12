@@ -95,3 +95,61 @@
   gap: 10px;
   margin-top: 4px;
 }
+
+.statsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statsCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.statsRoomName {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--neon-blue);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statsMetrics {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.statsMetric {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.statsNum {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.statsLbl {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.statsDivider {
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+}

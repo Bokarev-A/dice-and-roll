@@ -74,9 +74,13 @@ export function resolveEndDate(startsAtInput: string, endsAtTime: string): strin
   const datePart = startsAtInput.split('T')[0];
   const startTime = startsAtInput.split('T')[1]?.slice(0, 5) ?? '00:00';
   if (endsAtTime < startTime) {
-    const d = new Date(`${datePart}T00:00:00`);
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    // Use local Date constructor to avoid UTC offset shifting the date
+    const next = new Date(year, month - 1, day + 1);
+    const y = next.getFullYear();
+    const m = String(next.getMonth() + 1).padStart(2, '0');
+    const d = String(next.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
   return datePart;
 }

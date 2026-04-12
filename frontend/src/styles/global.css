@@ -338,6 +338,18 @@ textarea.input {
   border: 1px solid rgba(255, 107, 43, 0.3);
 }
 
+.badge-teal {
+  background: rgba(0, 210, 190, 0.15);
+  color: #00d2be;
+  border: 1px solid rgba(0, 210, 190, 0.3);
+}
+
+.badge-red {
+  background: rgba(255, 107, 43, 0.15);
+  color: var(--neon-orange);
+  border: 1px solid rgba(255, 107, 43, 0.3);
+}
+
 /* ── Neon text utility ────────────────────────────────────────── */
 .neon-text-pink {
   color: var(--neon-pink);

@@ -11,6 +11,7 @@ import { Empty } from '../../components/UI/Empty';
 import { BackButton } from '../../components/UI/BackButton';
 import { formatDateTime, localInputToISO, resolveEndDate } from '../../utils/format';
 import styles from './GM.module.css';
+import sessionStyles from '../Session/Session.module.css';
 
 export function GMSessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -138,7 +139,8 @@ export function GMSessionDetailPage() {
   const activeSignups = signups.filter((s) => s.status !== 'cancelled');
 
   return (
-    <div className={`animate-fade-in ${styles.page}`}>
+    <div className={`animate-fade-in ${styles.page} ${sessionStyles.sessionPage}`}>
+      <span className={sessionStyles.sessionTag}>Сессия</span>
       <BackButton to={`/campaign/${session.campaign_id}`} />
       <div className={styles.pageHeader}>
         <h1>{session.campaign_title}</h1>

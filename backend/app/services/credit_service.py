@@ -101,8 +101,11 @@ async def get_available_batches(
 ) -> List[CreditBatch]:
     """
     Get available credit batches for a user, ordered by FEFO.
+    Includes debt batches (remaining < 0) so balance can go negative.
     Filters out expired batches.
     """
+    from sqlalchemy import or_
+
     now = datetime.now(timezone.utc)
 
     result = await db.execute(
@@ -110,7 +113,7 @@ async def get_available_batches(
         .where(
             and_(
                 CreditBatch.user_id == user_id,
-                CreditBatch.remaining > 0,
+                CreditBatch.remaining != 0,
                 CreditBatch.status == CreditBatchStatus.active,
             )
         )
@@ -224,6 +227,54 @@ async def debit_credit(
     return entry
 
 
+async def debit_credit_as_debt(
+    db: AsyncSession,
+    user_id: int,
+    session_id: int,
+    marked_by: Optional[int] = None,
+) -> LedgerEntry:
+    """
+    Debit 1 credit from user going into debt (no regular credits available).
+    Accumulates into a single persistent debt batch per user.
+    Caller is responsible for committing.
+    """
+    result = await db.execute(
+        select(CreditBatch).where(
+            and_(
+                CreditBatch.user_id == user_id,
+                CreditBatch.batch_type == CreditBatchType.credit,
+                CreditBatch.remaining < 0,
+                CreditBatch.status == CreditBatchStatus.active,
+            )
+        ).limit(1)
+    )
+    debt_batch = result.scalar_one_or_none()
+
+    if not debt_batch:
+        debt_batch = CreditBatch(
+            user_id=user_id,
+            batch_type=CreditBatchType.credit,
+            total=0,
+            remaining=-1,
+            status=CreditBatchStatus.active,
+        )
+        db.add(debt_batch)
+        await db.flush()
+    else:
+        debt_batch.remaining -= 1
+
+    entry = LedgerEntry(
+        user_id=user_id,
+        credit_batch_id=debt_batch.id,
+        session_id=session_id,
+        entry_type=LedgerType.debit,
+        description="Списание за посещение сессии (в долг)",
+        created_by=marked_by,
+    )
+    db.add(entry)
+    return entry
+
+
 async def refund_credit(
     db: AsyncSession,
     user_id: int,
@@ -286,6 +337,64 @@ async def refund_credit(
     )
     db.add(entry)
 
+    await db.commit()
+    await db.refresh(entry)
+    return entry
+
+
+async def debit_rental_for_session(
+    db: AsyncSession,
+    gm_user_id: int,
+    session_id: int,
+) -> Optional[LedgerEntry]:
+    """
+    Debit 1 rental credit from a private GM when their session completes.
+    Idempotent — checks if a debit already exists for this user+session.
+    """
+    existing = await db.execute(
+        select(LedgerEntry).where(
+            and_(
+                LedgerEntry.user_id == gm_user_id,
+                LedgerEntry.session_id == session_id,
+                LedgerEntry.entry_type == LedgerType.debit,
+            )
+        )
+    )
+    if existing.scalar_one_or_none():
+        return None
+
+    result = await db.execute(
+        select(CreditBatch)
+        .where(
+            and_(
+                CreditBatch.user_id == gm_user_id,
+                CreditBatch.batch_type == CreditBatchType.rental,
+                CreditBatch.remaining > 0,
+                CreditBatch.status == CreditBatchStatus.active,
+            )
+        )
+        .order_by(
+            CreditBatch.expires_at.is_(None).asc(),
+            CreditBatch.expires_at.asc(),
+            CreditBatch.purchased_at.asc(),
+        )
+    )
+    batch = result.scalars().first()
+    if not batch:
+        return None
+
+    batch.remaining -= 1
+    if batch.remaining == 0:
+        batch.status = CreditBatchStatus.exhausted
+
+    entry = LedgerEntry(
+        user_id=gm_user_id,
+        credit_batch_id=batch.id,
+        session_id=session_id,
+        entry_type=LedgerType.debit,
+        description="Аренда за проведение частной сессии",
+    )
+    db.add(entry)
     await db.commit()
     await db.refresh(entry)
     return entry

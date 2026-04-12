@@ -33,7 +33,7 @@ function GMCampaignIdRedirect() {
 
 function AppRoutes() {
   const user = useAuthStore((s) => s.user);
-  const isGM = user?.role === 'gm' || user?.role === 'admin';
+  const isGM = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
   return (

@@ -10,6 +10,7 @@ import { Empty } from '../../components/UI/Empty';
 import { BackButton } from '../../components/UI/BackButton';
 import { formatDateTime } from '../../utils/format';
 import styles from '../GM/GM.module.css';
+import sessionStyles from './Session.module.css';
 
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -77,7 +78,8 @@ export function SessionDetailPage() {
   const canCancel = mySignup && (mySignup.status === 'confirmed' || mySignup.status === 'waitlist');
 
   return (
-    <div className={`animate-fade-in ${styles.page}`}>
+    <div className={`animate-fade-in ${styles.page} ${sessionStyles.sessionPage}`}>
+      <span className={sessionStyles.sessionTag}>Сессия</span>
       <BackButton to={`/campaign/${session.campaign_id}`} />
       <div className={styles.pageHeader}>
         <h1>{session.campaign_title}</h1>

@@ -134,5 +134,5 @@ def require_role(*roles: UserRole):
 
 
 # Shortcuts
-require_gm = require_role(UserRole.gm, UserRole.admin)
+require_gm = require_role(UserRole.gm, UserRole.private_gm, UserRole.admin)
 require_admin = require_role(UserRole.admin)

@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models.campaign import CampaignType, CampaignVisibility, CampaignStatus, CampaignMemberStatus
+from app.models.campaign import CampaignType, CampaignVisibility, CampaignStatus, CampaignMemberStatus, CampaignFunding
 
 
 class CampaignCreate(BaseModel):
@@ -25,6 +25,7 @@ class CampaignUpdate(BaseModel):
 class CampaignRead(BaseModel):
     id: int
     type: CampaignType
+    funding: CampaignFunding
     title: str
     system: Optional[str] = None
     description: Optional[str] = None

@@ -1,0 +1,38 @@
+/* Shared styles for session detail pages (player + GM view).
+   Adds a yellow chrome to visually distinguish sessions from
+   campaign/oneshot pages which use pink/blue accents. */
+
+.sessionPage {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 228, 77, 0.04) 0%,
+    transparent 100px
+  );
+}
+
+/* Yellow neon top line */
+.sessionPage::before {
+  content: '';
+  display: block;
+  height: 2px;
+  background: var(--neon-yellow);
+  box-shadow:
+    0 0 8px var(--neon-yellow-glow),
+    0 0 20px rgba(255, 228, 77, 0.2);
+  border-radius: 1px;
+  margin-bottom: 4px;
+}
+
+/* Small "СЕССИЯ" label shown below the top line */
+.sessionTag {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--neon-yellow);
+  opacity: 0.75;
+  margin-top: -8px;
+  text-align: center;
+}

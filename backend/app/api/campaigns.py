@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.models.campaign import (
-    Campaign, CampaignMember, CampaignStatus, CampaignVisibility, CampaignMemberStatus,
+    Campaign, CampaignMember, CampaignStatus, CampaignVisibility, CampaignMemberStatus, CampaignFunding,
 )
 from app.schemas.campaign import (
     CampaignCreate, CampaignUpdate, CampaignRead, CampaignMemberRead,
@@ -51,6 +51,7 @@ async def campaigns_with_counts(
         CampaignRead(
             id=camp.id,
             type=camp.type,
+            funding=camp.funding,
             title=camp.title,
             system=camp.system,
             description=camp.description,
@@ -143,6 +144,11 @@ async def create_campaign(
     current_user: User = Depends(require_gm),
 ):
     """Create a new campaign. GM only."""
+    funding = (
+        CampaignFunding.private
+        if current_user.role == UserRole.private_gm
+        else CampaignFunding.club
+    )
     campaign = Campaign(
         type=body.type,
         title=body.title,
@@ -150,6 +156,7 @@ async def create_campaign(
         description=body.description,
         owner_gm_user_id=current_user.id,
         visibility=body.visibility,
+        funding=funding,
     )
     db.add(campaign)
     await db.commit()
@@ -158,6 +165,7 @@ async def create_campaign(
     return CampaignRead(
         id=campaign.id,
         type=campaign.type,
+        funding=campaign.funding,
         title=campaign.title,
         system=campaign.system,
         description=campaign.description,

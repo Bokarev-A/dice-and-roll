@@ -18,7 +18,7 @@ from app.services.attendance_service import (
     get_unpaid_attendances,
     complete_session_if_all_marked,
 )
-from app.services.credit_service import refund_credit, grant_gm_reward
+from app.services.credit_service import refund_credit, grant_gm_reward, debit_rental_for_session
 from app.bot import notifications as notify
 from app.config import settings
 
@@ -151,24 +151,32 @@ async def update_attendance(
             detail="Attendance window has closed. Contact admin.",
         )
 
-    attendance = await mark_attendance(
-        db, session_id, user_id, body.status, current_user.id
-    )
-
     campaign = await db.get(Campaign, session.campaign_id)
+
+    skip_debit = campaign is not None and campaign.funding == CampaignFunding.private
+    attendance = await mark_attendance(
+        db, session_id, user_id, body.status, current_user.id, skip_debit=skip_debit
+    )
 
     # Grant GM reward for club-funded campaigns (idempotent — fires once per session)
     if campaign and campaign.funding == CampaignFunding.club:
         await grant_gm_reward(db, campaign.owner_gm_user_id, session_id)
 
     # Auto-complete session if all attendances are marked
-    await complete_session_if_all_marked(db, session_id)
+    session_completed = await complete_session_if_all_marked(db, session_id)
+
+    # Debit rental from private GM when session completes
+    if session_completed and campaign and campaign.funding == CampaignFunding.private:
+        owner = await db.get(User, campaign.owner_gm_user_id)
+        if owner and owner.role == UserRole.private_gm:
+            await debit_rental_for_session(db, campaign.owner_gm_user_id, session_id)
 
     # Notify if unpaid
     if attendance.unpaid:
         user = await db.get(User, user_id)
         if user and campaign:
             import pytz
+            from app.services.notification_service import get_admin_telegram_ids
 
             tz = pytz.timezone(settings.CLUB_TIMEZONE)
             session_date = session.starts_at.astimezone(tz).strftime(
@@ -177,6 +185,20 @@ async def update_attendance(
             await notify.notify_unpaid(
                 user.telegram_id, campaign.title, session_date
             )
+
+            # Notify admins about negative balance
+            admin_ids = await get_admin_telegram_ids(db)
+            if admin_ids:
+                gm = await db.get(User, campaign.owner_gm_user_id)
+                gm_name = f"{gm.first_name} {gm.last_name or ''}".strip() if gm else "—"
+                player_name = f"{user.first_name} {user.last_name or ''}".strip()
+                await notify.notify_admin_player_in_debt(
+                    admin_ids,
+                    player_name=player_name,
+                    player_username=user.username,
+                    campaign_title=campaign.title,
+                    gm_name=gm_name,
+                )
 
     user = await db.get(User, user_id)
     return attendance_to_read(attendance, user)

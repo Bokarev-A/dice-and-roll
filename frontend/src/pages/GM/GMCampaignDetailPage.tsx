@@ -251,21 +251,53 @@ export function GMCampaignDetailPage() {
       })()}
 
       {/* Sessions list */}
-      <h2>Сессии ({sessions.length})</h2>
-      {sessions.length === 0 ? (
-        <Empty icon="📅" title="Нет сессий" subtitle="Создайте первую сессию" />
-      ) : (
-        <div className={styles.list}>
-          {sessions.map((s) => (
-            <SessionCard
-              key={s.id}
-              session={s}
-              showCampaign={false}
-              onClick={() => navigate(`/gm/sessions/${s.id}`)}
-            />
-          ))}
-        </div>
-      )}
+      {(() => {
+        const upcoming = sessions.filter(
+          (s) => s.status !== 'done' && s.status !== 'canceled' && new Date(s.starts_at) > new Date()
+        );
+        const past = sessions
+          .filter(
+            (s) => s.status === 'done' || s.status === 'canceled' || new Date(s.starts_at) <= new Date()
+          )
+          .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+
+        return (
+          <>
+            <h2>Предстоящие сессии ({upcoming.length})</h2>
+            {upcoming.length === 0 ? (
+              <Empty icon="📅" title="Нет предстоящих сессий" subtitle="Создайте первую сессию" />
+            ) : (
+              <div className={styles.list}>
+                {upcoming.map((s) => (
+                  <SessionCard
+                    key={s.id}
+                    session={s}
+                    showCampaign={false}
+                    onClick={() => navigate(`/gm/sessions/${s.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {past.length > 0 && (
+              <>
+                <hr className="divider" />
+                <h2>Прошедшие сессии ({past.length})</h2>
+                <div className={styles.list}>
+                  {past.map((s) => (
+                    <SessionCard
+                      key={s.id}
+                      session={s}
+                      showCampaign={false}
+                      onClick={() => navigate(`/gm/sessions/${s.id}`)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

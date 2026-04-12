@@ -15,7 +15,7 @@ export function ShopPage() {
   const navigate = useNavigate();
   const showToast = useUIStore((s) => s.showToast);
   const user = useAuthStore((s) => s.user);
-  const isGmOrAdmin = user?.role === 'gm' || user?.role === 'admin';
+  const isGmOrAdmin = user?.role === 'private_gm' || user?.role === 'admin';
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);

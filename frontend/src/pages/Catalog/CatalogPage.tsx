@@ -15,7 +15,7 @@ export function CatalogPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const showToast = useUIStore((s) => s.showToast);
-  const isGM = user?.role === 'gm' || user?.role === 'admin';
+  const isGM = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
 
   const [tab, setTab] = useState<Tab>('oneshots');
   const [oneshots, setOneshots] = useState<Campaign[]>([]);

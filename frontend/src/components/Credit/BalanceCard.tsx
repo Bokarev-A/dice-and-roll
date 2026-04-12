@@ -18,13 +18,17 @@ export function BalanceCard({
   showGmRewards = false,
   onClick,
 }: BalanceCardProps) {
+  const isDebt = totalCredits < 0;
+
   return (
     <div className={`card card-glow ${styles.balance}`} onClick={onClick}>
       <div className={styles.row}>
         <div className={styles.block}>
           <div className={styles.label}>Кредиты</div>
-          <div className={styles.value}>{totalCredits}</div>
-          <div className={styles.sub}>{formatCredits(totalCredits)} доступно</div>
+          <div className={isDebt ? styles.valueDebt : styles.value}>{totalCredits}</div>
+          <div className={isDebt ? styles.subDebt : styles.sub}>
+            {isDebt ? '⚠ Есть долг — купите кредиты' : `${formatCredits(totalCredits)} доступно`}
+          </div>
         </div>
         {showRentals && (
           <div className={styles.block}>

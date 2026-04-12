@@ -9,8 +9,8 @@ import styles from './Admin.module.css';
 
 const ROLE_OPTIONS: { value: UserRole; label: string; color: string }[] = [
   { value: 'player', label: 'Игрок', color: 'blue' },
-  { value: 'gm', label: 'Мастер', color: 'purple' },
-  { value: 'admin', label: 'Админ', color: 'pink' },
+  { value: 'gm', label: 'Мастер клуба', color: 'purple' },
+  { value: 'private_gm', label: 'Мастер частный', color: 'teal' },
 ];
 
 export function UsersPage() {
