@@ -23,7 +23,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await usersApi.getMe();
       set({ user, loading: false });
     } catch (err: any) {
-      const message = err.response?.data?.detail || 'Failed to authenticate';
+      const message = err.code === 'ECONNABORTED'
+        ? 'Не удалось подключиться к серверу. Проверьте интернет-соединение.'
+        : err.response?.data?.detail || 'Failed to authenticate';
       set({ error: message, loading: false });
     }
   },

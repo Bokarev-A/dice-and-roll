@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Telegram SDK — скачивается на сервере вручную
+public/telegram-web-app.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

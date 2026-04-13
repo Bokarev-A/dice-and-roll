@@ -21,6 +21,13 @@ sudo -u "$APP_USER" "$VENV/alembic" -c "$APP_DIR/backend/alembic.ini" upgrade he
 echo "=== [4/5] Сборка фронтенда ==="
 cd "$APP_DIR/frontend"
 sudo -u "$APP_USER" npm ci --silent
+
+# Скачиваем Telegram WebApp SDK локально (если отсутствует или устарел)
+mkdir -p "$APP_DIR/frontend/public"
+curl -sf https://telegram.org/js/telegram-web-app.js -o "$APP_DIR/frontend/public/telegram-web-app.js" \
+    && echo "  ✓ Telegram SDK обновлён" \
+    || echo "  ⚠ Не удалось скачать Telegram SDK (используется предыдущая версия)"
+
 sudo -u "$APP_USER" npm run build
 
 echo "=== [5/5] Перезапуск сервиса ==="
