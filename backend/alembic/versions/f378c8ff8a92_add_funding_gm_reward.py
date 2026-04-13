@@ -24,31 +24,9 @@ def upgrade() -> None:
     # 2. Add 'gm_reward' to ledgertype enum
     op.execute("ALTER TYPE ledgertype ADD VALUE IF NOT EXISTS 'gm_reward'")
 
-    # 3. Create campaignfunding enum and add funding column
-    campaignfunding = sa.Enum('club', 'private', name='campaignfunding')
-    campaignfunding.create(op.get_bind(), checkfirst=True)
-
-    op.add_column('campaigns', sa.Column(
-        'funding',
-        sa.Enum('club', 'private', name='campaignfunding'),
-        server_default='club',
-        nullable=False,
-    ))
-
-    # 4. Add session_id to credit_batches (for gm_reward source)
-    op.add_column('credit_batches', sa.Column('session_id', sa.Integer(), nullable=True))
-    op.create_foreign_key(
-        'fk_credit_batches_session_id',
-        'credit_batches', 'game_sessions',
-        ['session_id'], ['id'],
-    )
-
-    # 5. Make order_id nullable (gm_reward batches have no order)
-    op.alter_column('credit_batches', 'order_id',
-                    existing_type=sa.INTEGER(),
-                    nullable=True)
-
-    # 6. Drop unique constraint on order_id (multiple NULLs needed)
+    # 3. Drop unique constraint on order_id (multiple NULLs needed for gm_reward batches)
+    # campaignfunding enum, funding column, session_id column, FK, order_id nullable
+    # — всё это уже сделано в предыдущей миграции a9f56866ec22
     op.drop_constraint('credit_batches_order_id_key', 'credit_batches', type_='unique')
 
 
