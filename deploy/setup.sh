@@ -25,10 +25,11 @@ usermod -aG docker "$APP_USER"
 echo "=== [4/7] Клонирование репозитория ==="
 if [ ! -d "$APP_DIR" ]; then
     git clone https://github.com/YOUR_USERNAME/dice-and-roll.git "$APP_DIR"
-    chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 else
     echo "Директория $APP_DIR уже существует, пропускаем клонирование"
 fi
+# Всегда выставляем владельца — на случай если директория уже была с другим owner
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 echo "=== [5/7] Python venv и зависимости ==="
 sudo -u "$APP_USER" python3 -m venv "$APP_DIR/backend/venv"
