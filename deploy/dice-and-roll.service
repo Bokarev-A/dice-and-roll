@@ -1,0 +1,32 @@
+[Unit]
+Description=Dice & Roll FastAPI Application
+After=network.target postgresql.service docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=diceroll
+Group=diceroll
+WorkingDirectory=/opt/dice-and-roll/backend
+
+# Запуск через venv
+ExecStart=/opt/dice-and-roll/backend/venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 2 \
+    --log-level info
+
+# Автоперезапуск при падении
+Restart=always
+RestartSec=5
+
+# Переменные окружения из файла
+EnvironmentFile=/opt/dice-and-roll/backend/.env
+
+# Логи уходят в journald (смотреть: journalctl -u dice-and-roll -f)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dice-and-roll
+
+[Install]
+WantedBy=multi-user.target
