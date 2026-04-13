@@ -21,7 +21,7 @@ sudo -u "$APP_USER" "$VENV/alembic" upgrade head
 
 echo "=== [4/5] Сборка фронтенда ==="
 cd "$APP_DIR/frontend"
-sudo -u "$APP_USER" npm ci --silent
+sudo -u "$APP_USER" npm ci
 
 # Скачиваем Telegram WebApp SDK локально (если отсутствует или устарел)
 mkdir -p "$APP_DIR/frontend/public"
