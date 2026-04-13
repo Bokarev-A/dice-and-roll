@@ -4,7 +4,7 @@ from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.signup import Signup, SignupStatus
-from app.models.session import GameSession
+from app.models.session import GameSession, SessionStatus
 from app.models.campaign import Campaign, CampaignMember, CampaignType, CampaignMemberStatus
 
 
@@ -327,6 +327,48 @@ async def auto_approve_expired_offers(db: AsyncSession, timeout_hours: int):
         await db.commit()
 
     return expired_offers
+
+
+async def auto_signup_new_member(
+    db: AsyncSession, user_id: int, campaign_id: int
+):
+    """
+    Auto-enroll a newly approved campaign member into all upcoming sessions
+    of the campaign they don't already have a signup for.
+    Called when a pending member is approved.
+    """
+    now = datetime.now(timezone.utc)
+
+    result = await db.execute(
+        select(GameSession).where(
+            and_(
+                GameSession.campaign_id == campaign_id,
+                GameSession.starts_at > now,
+                GameSession.status.in_([SessionStatus.planned, SessionStatus.moved]),
+            )
+        )
+    )
+    sessions = result.scalars().all()
+
+    for session in sessions:
+        existing = await db.execute(
+            select(Signup).where(
+                and_(
+                    Signup.session_id == session.id,
+                    Signup.user_id == user_id,
+                    Signup.status != SignupStatus.cancelled,
+                )
+            )
+        )
+        if existing.scalar_one_or_none():
+            continue
+        db.add(Signup(
+            session_id=session.id,
+            user_id=user_id,
+            status=SignupStatus.pending,
+        ))
+
+    await db.commit()
 
 
 async def cancel_future_signups_for_campaign(

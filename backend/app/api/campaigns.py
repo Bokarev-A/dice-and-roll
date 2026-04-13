@@ -11,7 +11,7 @@ from app.schemas.campaign import (
     CampaignCreate, CampaignUpdate, CampaignRead, CampaignMemberRead,
 )
 from app.api.deps import get_current_user, require_gm
-from app.services.signup_service import cancel_future_signups_for_campaign
+from app.services.signup_service import cancel_future_signups_for_campaign, auto_signup_new_member
 from app.bot import notifications as notify
 
 router = APIRouter(prefix="/campaigns", tags=["campaigns"])
@@ -371,6 +371,8 @@ async def approve_member(
     member.status = CampaignMemberStatus.active
     await db.commit()
     await db.refresh(member)
+
+    await auto_signup_new_member(db, member.user_id, campaign_id)
 
     player = await db.get(User, member.user_id)
     if player:
