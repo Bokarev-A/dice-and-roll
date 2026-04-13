@@ -80,7 +80,7 @@ export function SessionDetailPage() {
   return (
     <div className={`animate-fade-in ${styles.page} ${sessionStyles.sessionPage}`}>
       <span className={sessionStyles.sessionTag}>Сессия</span>
-      <BackButton to={`/campaign/${session.campaign_id}`} />
+      <BackButton />
       <div className={styles.pageHeader}>
         <h1>{session.campaign_title}</h1>
         <SessionBadge status={session.status} />

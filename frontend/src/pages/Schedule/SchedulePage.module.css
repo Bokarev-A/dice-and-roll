@@ -1,0 +1,126 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Week navigation ── */
+.weekNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.navArrow {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--neon-blue);
+  font-size: 1.1rem;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: var(--transition);
+  line-height: 1;
+}
+
+.navArrow:hover {
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 10px var(--neon-blue-glow);
+}
+
+.weekLabel {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  text-align: center;
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Days list ── */
+.dayList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dayBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dayHeader {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--neon-pink);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 45, 149, 0.2);
+}
+
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Session card ── */
+.sessionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cardMine {
+  border-left-color: var(--neon-green);
+  box-shadow: -3px 0 10px var(--neon-green-glow);
+}
+
+.cardPending {
+  border-left-color: var(--neon-yellow);
+  box-shadow: -3px 0 10px var(--neon-yellow-glow);
+}
+
+/* ── Card internals ── */
+.cardRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.timeRange {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--neon-blue);
+  white-space: nowrap;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.capacity {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}

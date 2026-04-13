@@ -14,6 +14,7 @@ import { PaymentPage } from './pages/Shop/PaymentPage';
 import { CampaignPage } from './pages/Campaign/CampaignPage';
 import { SessionDetailPage } from './pages/Session/SessionDetailPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
+import { SchedulePage } from './pages/Schedule/SchedulePage';
 
 // GM pages
 import { GMSessionDetailPage } from './pages/GM/GMSessionDetailPage';
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Route path="/campaign/:id" element={<CampaignPage />} />
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/schedule" element={<SchedulePage />} />
 
         {isGM && (
           <>

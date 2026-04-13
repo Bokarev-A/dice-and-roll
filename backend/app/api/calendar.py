@@ -126,6 +126,77 @@ async def my_calendar(
     return entries
 
 
+@router.get("/weekly", response_model=list[CalendarEntry])
+async def weekly_schedule(
+    week_start: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    All planned/moved sessions for the given week (Mon–Sun).
+    week_start: YYYY-MM-DD (Monday); defaults to current week.
+    """
+    import zoneinfo
+    from datetime import date, timedelta
+    from app.config import settings
+
+    tz = zoneinfo.ZoneInfo(settings.CLUB_TIMEZONE)
+
+    if week_start:
+        monday = date.fromisoformat(week_start)
+    else:
+        today = datetime.now(tz).date()
+        monday = today - timedelta(days=today.weekday())  # weekday() 0=Mon
+
+    week_start_dt = datetime(monday.year, monday.month, monday.day, tzinfo=tz)
+    week_end_dt = week_start_dt + timedelta(days=7)
+
+    result = await db.execute(
+        select(GameSession)
+        .where(
+            GameSession.starts_at >= week_start_dt,
+            GameSession.starts_at < week_end_dt,
+            GameSession.status.in_([SessionStatus.planned, SessionStatus.moved]),
+        )
+        .order_by(GameSession.starts_at.asc())
+    )
+    sessions = result.scalars().all()
+
+    if not sessions:
+        return []
+
+    # Bulk fetch user's signups for all sessions in the week
+    signup_result = await db.execute(
+        select(Signup).where(
+            and_(
+                Signup.user_id == current_user.id,
+                Signup.session_id.in_([s.id for s in sessions]),
+                Signup.status != SignupStatus.cancelled,
+            )
+        )
+    )
+    user_signups = {sg.session_id: sg for sg in signup_result.scalars().all()}
+
+    # Campaigns where the current user is GM
+    gm_result = await db.execute(
+        select(Campaign.id).where(Campaign.owner_gm_user_id == current_user.id)
+    )
+    gm_campaign_ids = {row[0] for row in gm_result.all()}
+
+    entries = []
+    for session in sessions:
+        sg = user_signups.get(session.id)
+        entries.append(
+            await _build_entry(
+                db,
+                session,
+                signup_status=sg.status.value if sg else None,
+                is_gm=session.campaign_id in gm_campaign_ids,
+            )
+        )
+    return entries
+
+
 @router.get("/public", response_model=list[PublicSessionEntry])
 async def public_sessions(
     db: AsyncSession = Depends(get_db),

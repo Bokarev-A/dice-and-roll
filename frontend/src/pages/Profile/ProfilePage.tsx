@@ -45,7 +45,6 @@ export function ProfilePage() {
 
   const showRentals = user?.role === 'private_gm' || user?.role === 'admin';
   const showGmRewards = user?.role === 'gm' || user?.role === 'admin';
-  const hasGmRewards = (balance?.total_gm_rewards || 0) > 0;
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
@@ -81,7 +80,7 @@ export function ProfilePage() {
         totalRentals={balance?.total_rentals || 0}
         totalGmRewards={balance?.total_gm_rewards || 0}
         showRentals={showRentals}
-        showGmRewards={showGmRewards || hasGmRewards}
+        showGmRewards={showGmRewards}
       />
 
       {/* Tabs */}
@@ -162,7 +161,7 @@ export function ProfilePage() {
             </>
           )}
 
-          {(showGmRewards || hasGmRewards) && (
+          {showGmRewards && (
             <>
               <h3 className={styles.sectionTitle}>
                 <span className={styles.emoji}>⭐</span> МАСТЕРСКИЕ КРЕДИТЫ

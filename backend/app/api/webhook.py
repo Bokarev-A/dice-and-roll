@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["bot-webhook"])
 
-BOT_API_URL = f"https://api.telegram.org/bot{settings.BOT_TOKEN}"
+BOT_API_URL = f"{settings.TELEGRAM_BOT_API_URL}/bot{settings.BOT_TOKEN}"
 
 
 async def answer_callback_query(

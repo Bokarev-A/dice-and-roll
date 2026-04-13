@@ -9,4 +9,9 @@ export const calendarApi = {
 
   public: () =>
     api.get<PublicSessionEntry[]>('/calendar/public').then(r => r.data),
+
+  weekly: (weekStart?: string) =>
+    api.get<CalendarEntry[]>('/calendar/weekly', {
+      params: weekStart ? { week_start: weekStart } : {},
+    }).then(r => r.data),
 };

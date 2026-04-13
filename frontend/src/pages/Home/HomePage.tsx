@@ -179,7 +179,7 @@ export function HomePage() {
             totalRentals={balance?.total_rentals || 0}
             totalGmRewards={balance?.total_gm_rewards || 0}
             showRentals={user?.role === 'private_gm'}
-            showGmRewards={user?.role === 'gm' || (balance?.total_gm_rewards || 0) > 0}
+            showGmRewards={user?.role === 'gm' || user?.role === 'admin'}
             onClick={() => navigate('/profile')}
           />
 
@@ -264,20 +264,22 @@ export function HomePage() {
       )}
 
       {/* Quick actions */}
-      <div className={styles.actions}>
-        <button
-          className="btn btn-primary btn-block"
-          onClick={() => navigate('/catalog')}
-        >
-          🎲 Найти игру
-        </button>
-        <button
-          className="btn btn-secondary btn-block"
-          onClick={() => navigate('/shop')}
-        >
-          💎 Купить кредиты
-        </button>
-      </div>
+      {!isAdmin && (
+        <div className={styles.actions}>
+          <button
+            className="btn btn-primary btn-block"
+            onClick={() => navigate('/catalog')}
+          >
+            🎲 Найти игру
+          </button>
+          <button
+            className="btn btn-secondary btn-block"
+            onClick={() => navigate('/shop')}
+          >
+            💎 Купить кредиты
+          </button>
+        </div>
+      )}
     </div>
   );
 }
