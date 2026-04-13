@@ -16,7 +16,8 @@ sudo -u "$APP_USER" "$VENV/pip" install -q --upgrade pip
 sudo -u "$APP_USER" "$VENV/pip" install -q -r "$APP_DIR/backend/requirements.txt"
 
 echo "=== [3/5] Применение миграций БД ==="
-sudo -u "$APP_USER" "$VENV/alembic" -c "$APP_DIR/backend/alembic.ini" upgrade head
+cd "$APP_DIR/backend"
+sudo -u "$APP_USER" "$VENV/alembic" upgrade head
 
 echo "=== [4/5] Сборка фронтенда ==="
 cd "$APP_DIR/frontend"
