@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ordersApi } from '../../api/orders';
 import type { Order } from '../../types/index';
 import { useUIStore } from '../../store/useUIStore';
@@ -18,6 +18,7 @@ export function OrdersPage() {
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionOrderId, setActionOrderId] = useState<number | null>(null);
+  const actionInProgress = useRef(false);
 
   async function load() {
     setLoading(true);
@@ -41,15 +42,18 @@ export function OrdersPage() {
   }, [tab]);
 
   async function handleConfirm(orderId: number) {
+    if (actionInProgress.current) return;
+    actionInProgress.current = true;
     setActionOrderId(orderId);
     try {
       await ordersApi.confirm(orderId);
       showToast('Оплата подтверждена!', 'success');
-      await load();
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
     } finally {
+      actionInProgress.current = false;
       setActionOrderId(null);
+      await load();
     }
   }
 
@@ -58,17 +62,20 @@ export function OrdersPage() {
       showToast('Укажите причину', 'error');
       return;
     }
+    if (actionInProgress.current) return;
+    actionInProgress.current = true;
     setActionOrderId(orderId);
     try {
       await ordersApi.reject(orderId, rejectReason.trim());
       showToast('Оплата отклонена', 'info');
       setRejectId(null);
       setRejectReason('');
-      await load();
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
     } finally {
+      actionInProgress.current = false;
       setActionOrderId(null);
+      await load();
     }
   }
 
@@ -138,7 +145,7 @@ export function OrdersPage() {
                   <button
                     className="btn btn-success btn-sm"
                     onClick={() => handleConfirm(order.id)}
-                    disabled={actionOrderId === order.id}
+                    disabled={actionOrderId !== null}
                   >
                     {actionOrderId === order.id ? '...' : '✓ Подтвердить'}
                   </button>
@@ -147,7 +154,7 @@ export function OrdersPage() {
                     onClick={() => setRejectId(
                       rejectId === order.id ? null : order.id
                     )}
-                    disabled={actionOrderId === order.id}
+                    disabled={actionOrderId !== null}
                   >
                     ✕ Отклонить
                   </button>
@@ -165,7 +172,7 @@ export function OrdersPage() {
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={() => handleReject(order.id)}
-                    disabled={actionOrderId === order.id}
+                    disabled={actionOrderId !== null}
                   >
                     {actionOrderId === order.id ? '...' : 'Отклонить'}
                   </button>

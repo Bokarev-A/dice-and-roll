@@ -160,18 +160,20 @@ async def signup_for_session(
     """
     Sign up a user for a session.
     If capacity allows: confirmed. Otherwise: waitlist.
+    Reuses a cancelled signup row if one exists (due to unique constraint).
     """
-    # Check if already signed up (non-cancelled)
+    # Check for any existing signup (including cancelled)
     result = await db.execute(
         select(Signup).where(
             and_(
                 Signup.session_id == session.id,
                 Signup.user_id == user_id,
-                Signup.status != SignupStatus.cancelled,
             )
         )
     )
-    if result.scalar_one_or_none():
+    existing = result.scalar_one_or_none()
+
+    if existing and existing.status != SignupStatus.cancelled:
         raise ValueError("Вы уже записаны на эту сессию")
 
     # Check access
@@ -188,10 +190,10 @@ async def signup_for_session(
     confirmed_count = await get_confirmed_count(db, session.id)
 
     if confirmed_count < session.capacity:
-        status = SignupStatus.confirmed
+        new_status = SignupStatus.confirmed
         position = None
     else:
-        status = SignupStatus.waitlist
+        new_status = SignupStatus.waitlist
         max_pos_result = await db.execute(
             select(func.max(Signup.waitlist_position)).where(
                 and_(
@@ -203,13 +205,20 @@ async def signup_for_session(
         max_pos = max_pos_result.scalar() or 0
         position = max_pos + 1
 
-    signup = Signup(
-        session_id=session.id,
-        user_id=user_id,
-        status=status,
-        waitlist_position=position,
-    )
-    db.add(signup)
+    if existing:
+        # Reuse the cancelled row to avoid unique constraint violation
+        existing.status = new_status
+        existing.waitlist_position = position
+        existing.offered_at = None
+        signup = existing
+    else:
+        signup = Signup(
+            session_id=session.id,
+            user_id=user_id,
+            status=new_status,
+            waitlist_position=position,
+        )
+        db.add(signup)
 
     await db.commit()
     await db.refresh(signup)
