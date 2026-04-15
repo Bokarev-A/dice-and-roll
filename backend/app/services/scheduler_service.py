@@ -75,18 +75,6 @@ async def job_credits_expiring_warning():
             logger.error(f"Error sending expiry warnings: {e}")
 
 
-async def job_session_reminders():
-    """Send session reminders."""
-    from app.services.notification_service import send_session_reminders
-
-    async with async_session() as db:
-        try:
-            for hours in settings.reminder_hours:
-                await send_session_reminders(db, hours)
-        except Exception as e:
-            logger.error(f"Error sending reminders: {e}")
-
-
 async def job_auto_approve_offers():
     """Auto-approve offered signups past timeout."""
     from app.services.signup_service import auto_approve_expired_offers
@@ -113,6 +101,17 @@ async def job_gm_48h_confirmation():
             await send_gm_48h_notifications(db)
         except Exception as e:
             logger.error(f"Error in GM 48h confirmation job: {e}")
+
+
+async def job_gm_6h_confirmation():
+    """Send 6h-ahead confirmation requests to GMs."""
+    from app.services.gm_confirmation_service import send_gm_6h_notifications
+
+    async with async_session() as db:
+        try:
+            await send_gm_6h_notifications(db)
+        except Exception as e:
+            logger.error(f"Error in GM 6h confirmation job: {e}")
 
 
 async def job_attendance_reminders():
@@ -161,9 +160,9 @@ def start_scheduler():
     scheduler.add_job(job_expire_orders, "interval", minutes=10)
     scheduler.add_job(job_auto_approve_offers, "interval", minutes=10)
 
-    # Every 15 minutes: session reminders, GM 48h confirmations
-    scheduler.add_job(job_session_reminders, "interval", minutes=15)
+    # Every 15 minutes: GM 48h and 6h confirmation requests
     scheduler.add_job(job_gm_48h_confirmation, "interval", minutes=15)
+    scheduler.add_job(job_gm_6h_confirmation, "interval", minutes=15)
 
     # Daily at 3:00 AM: expire credits, send warnings, attendance reminders
     scheduler.add_job(job_expire_credits, "cron", hour=3, minute=0)

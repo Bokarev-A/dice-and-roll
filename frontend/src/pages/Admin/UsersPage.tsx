@@ -13,11 +13,14 @@ const ROLE_OPTIONS: { value: UserRole; label: string; color: string }[] = [
   { value: 'private_gm', label: 'Мастер частный', color: 'teal' },
 ];
 
+type PendingChange = { userId: number; role: UserRole };
+
 export function UsersPage() {
   const showToast = useUIStore((s) => s.showToast);
   const currentUser = useAuthStore((s) => s.user);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
 
   async function load() {
     try {
@@ -34,13 +37,25 @@ export function UsersPage() {
     load();
   }, []);
 
-  async function handleRoleChange(userId: number, role: UserRole) {
+  async function confirmRoleChange() {
+    if (!pendingChange) return;
     try {
-      await usersApi.updateRole(userId, role);
+      await usersApi.updateRole(pendingChange.userId, pendingChange.role);
       showToast('Роль обновлена!', 'success');
+      setPendingChange(null);
       await load();
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    }
+  }
+
+  function requestRoleChange(userId: number, role: UserRole, currentRole: UserRole) {
+    if (role === currentRole) return;
+    // clicking a different pending for same user replaces it; clicking elsewhere clears
+    if (pendingChange?.userId === userId && pendingChange.role === role) {
+      setPendingChange(null);
+    } else {
+      setPendingChange({ userId, role });
     }
   }
 
@@ -54,6 +69,10 @@ export function UsersPage() {
       <div className={styles.list}>
         {users.map((user) => {
           const isMe = user.id === currentUser?.id;
+          const isPending = pendingChange?.userId === user.id;
+          const pendingOpt = isPending
+            ? ROLE_OPTIONS.find((o) => o.value === pendingChange!.role)
+            : null;
 
           return (
             <div key={user.id} className={`card ${styles.userCard}`}>
@@ -82,13 +101,29 @@ export function UsersPage() {
                     className={`btn btn-sm ${
                       user.role === opt.value ? 'btn-primary' : 'btn-secondary'
                     }`}
-                    onClick={() => handleRoleChange(user.id, opt.value)}
+                    onClick={() => requestRoleChange(user.id, opt.value, user.role)}
                     disabled={isMe}
                   >
                     {opt.label}
                   </button>
                 ))}
               </div>
+
+              {isPending && pendingOpt && (
+                <div className={styles.roleConfirm}>
+                  <span className={styles.roleConfirmText}>
+                    Сменить роль на «{pendingOpt.label}»?
+                  </span>
+                  <div className={styles.roleConfirmActions}>
+                    <button className="btn btn-sm btn-primary" onClick={confirmRoleChange}>
+                      Да
+                    </button>
+                    <button className="btn btn-sm btn-secondary" onClick={() => setPendingChange(null)}>
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

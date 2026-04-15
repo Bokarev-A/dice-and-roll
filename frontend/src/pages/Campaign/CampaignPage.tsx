@@ -28,13 +28,21 @@ export function CampaignPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+
+  // Edit campaign form (GM owner only)
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editSystem, setEditSystem] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editCapacity, setEditCapacity] = useState(5);
+  const [saving, setSaving] = useState(false);
 
   // Create session form (GM owner only)
   const [showCreateSession, setShowCreateSession] = useState(false);
   const [roomId, setRoomId] = useState<number>(0);
   const [startsAt, setStartsAt] = useState('');
   const [endsAtTime, setEndsAtTime] = useState('');
-  const [capacity, setCapacity] = useState(5);
   const [sessionDescription, setSessionDescription] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -110,6 +118,35 @@ export function CampaignPage() {
     }
   }
 
+  function openEdit() {
+    if (!campaign) return;
+    setEditTitle(campaign.title);
+    setEditSystem(campaign.system ?? '');
+    setEditDescription(campaign.description ?? '');
+    setEditCapacity(campaign.capacity);
+    setShowEdit(true);
+  }
+
+  async function handleSaveEdit() {
+    if (!editTitle.trim()) return;
+    setSaving(true);
+    try {
+      await campaignsApi.update(campaignId, {
+        title: editTitle.trim(),
+        system: editSystem.trim() || null,
+        description: editDescription.trim() || null,
+        capacity: editCapacity,
+      });
+      showToast('Сохранено', 'success');
+      setShowEdit(false);
+      await load();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка при сохранении', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleApprove(memberId: number) {
     try {
       await campaignsApi.approveMember(campaignId, memberId);
@@ -163,7 +200,6 @@ export function CampaignPage() {
         room_id: roomId,
         starts_at: localInputToISO(startsAt),
         ends_at: localInputToISO(`${resolveEndDate(startsAt, endsAtTime)}T${endsAtTime}`),
-        capacity,
         description: sessionDescription.trim() || undefined,
       });
       showToast('Сессия создана!', 'success');
@@ -196,17 +232,78 @@ export function CampaignPage() {
     <div className={`animate-fade-in ${styles.page}`}>
       <BackButton to="/catalog" />
       <div className={styles.header}>
-        <Badge
-          text={campaign.type === 'campaign' ? 'Кампания' : 'Ваншот'}
-          color={campaign.type === 'campaign' ? 'purple' : 'blue'}
-        />
+        <div className={styles.headerTop}>
+          <Badge
+            text={campaign.type === 'campaign' ? 'Кампания' : 'Ваншот'}
+            color={campaign.type === 'campaign' ? 'purple' : 'blue'}
+          />
+          {isOwnerGM && (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={showEdit ? () => setShowEdit(false) : openEdit}
+            >
+              {showEdit ? '✕ Закрыть' : '✎ Изменить'}
+            </button>
+          )}
+        </div>
         <h1 className={styles.title}>{campaign.title}</h1>
         {campaign.system && (
           <div className={styles.system}>{campaign.system}</div>
         )}
       </div>
 
-      {campaign.description && (
+      {/* Edit form — GM owner only */}
+      {isOwnerGM && showEdit && (
+        <div className={`card ${styles.createForm}`}>
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Название *</label>
+            <input
+              className="input"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+            />
+          </div>
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Система</label>
+            <input
+              className="input"
+              value={editSystem}
+              onChange={(e) => setEditSystem(e.target.value)}
+              placeholder="D&D 5e, Pathfinder..."
+            />
+          </div>
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Описание</label>
+            <textarea
+              className="input"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Расскажите об игре..."
+              rows={3}
+            />
+          </div>
+          <div className={styles.formField}>
+            <label className={styles.formLabel}>Количество мест</label>
+            <input
+              className="input"
+              type="number"
+              min="1"
+              max="20"
+              value={editCapacity}
+              onChange={(e) => setEditCapacity(Number(e.target.value))}
+            />
+          </div>
+          <button
+            className="btn btn-primary btn-block"
+            onClick={handleSaveEdit}
+            disabled={saving || !editTitle.trim()}
+          >
+            Сохранить
+          </button>
+        </div>
+      )}
+
+      {campaign.description && !showEdit && (
         <div className={`card ${styles.descCard}`}>
           <p className={styles.description}>{campaign.description}</p>
         </div>
@@ -223,38 +320,22 @@ export function CampaignPage() {
         </div>
       </div>
 
-      {/* Join / Leave (non-owner players) */}
-      {!isOwnerGM && (
-        isMember ? (
-          <button
-            className="btn btn-danger btn-block"
-            onClick={handleLeave}
-            disabled={actionLoading}
-          >
-            Покинуть кампанию
-          </button>
-        ) : hasPendingApp ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <button className="btn btn-secondary btn-block" disabled>
-              ⏳ На рассмотрении
-            </button>
-            <button
-              className="btn btn-danger btn-block"
-              onClick={handleLeave}
-              disabled={actionLoading}
-            >
-              Отозвать заявку
-            </button>
-          </div>
-        ) : (
-          <button
-            className="btn btn-primary btn-block"
-            onClick={handleJoin}
-            disabled={actionLoading}
-          >
-            Подать заявку
-          </button>
-        )
+      {/* Join (non-owner, not yet a member) */}
+      {!isOwnerGM && !isMember && !hasPendingApp && (
+        <button
+          className="btn btn-primary btn-block"
+          onClick={handleJoin}
+          disabled={actionLoading}
+        >
+          Подать заявку
+        </button>
+      )}
+
+      {/* Pending status indicator */}
+      {!isOwnerGM && hasPendingApp && (
+        <button className="btn btn-secondary btn-block" disabled>
+          ⏳ На рассмотрении
+        </button>
       )}
 
       <hr className="divider" />
@@ -386,18 +467,6 @@ export function CampaignPage() {
             />
           </div>
 
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>Мест</label>
-            <input
-              className="input"
-              type="number"
-              min="1"
-              max="20"
-              value={capacity}
-              onChange={(e) => setCapacity(Number(e.target.value))}
-            />
-          </div>
-
           <button
             className="btn btn-primary btn-block"
             onClick={handleCreateSession}
@@ -463,6 +532,44 @@ export function CampaignPage() {
               />
             ))}
           </div>
+        </>
+      )}
+      {/* Leave / Withdraw — always at the very bottom */}
+      {!isOwnerGM && (isMember || hasPendingApp) && (
+        <>
+          <hr className="divider" />
+          {!showLeaveConfirm ? (
+            <button
+              className={`btn btn-block ${styles.leaveBtnMuted}`}
+              onClick={() => setShowLeaveConfirm(true)}
+              disabled={actionLoading}
+            >
+              {isMember ? 'Покинуть игру' : 'Отозвать заявку'}
+            </button>
+          ) : (
+            <div className={styles.leaveConfirm}>
+              <p className={styles.leaveConfirmText}>
+                {isMember ? 'Точно хотите покинуть игру?' : 'Отозвать заявку на вступление?'}
+              </p>
+              <div className={styles.leaveConfirmButtons}>
+                <button
+                  className="btn btn-danger"
+                  style={{ flex: 1 }}
+                  onClick={handleLeave}
+                  disabled={actionLoading}
+                >
+                  {isMember ? 'Да, покинуть' : 'Отозвать'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setShowLeaveConfirm(false)}
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

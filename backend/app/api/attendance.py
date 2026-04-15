@@ -171,17 +171,16 @@ async def update_attendance(
         if owner and owner.role == UserRole.private_gm:
             await debit_rental_for_session(db, campaign.owner_gm_user_id, session_id)
 
-    # Notify if unpaid
+    # Notify player about attendance result
+    import pytz
+    from app.services.notification_service import get_admin_telegram_ids
+
+    tz = pytz.timezone(settings.CLUB_TIMEZONE)
+    session_date = session.starts_at.astimezone(tz).strftime("%d.%m.%Y")
+
     if attendance.unpaid:
         user = await db.get(User, user_id)
         if user and campaign:
-            import pytz
-            from app.services.notification_service import get_admin_telegram_ids
-
-            tz = pytz.timezone(settings.CLUB_TIMEZONE)
-            session_date = session.starts_at.astimezone(tz).strftime(
-                "%d.%m.%Y"
-            )
             await notify.notify_unpaid(
                 user.telegram_id, campaign.title, session_date
             )
@@ -199,6 +198,13 @@ async def update_attendance(
                     campaign_title=campaign.title,
                     gm_name=gm_name,
                 )
+    elif body.status == AttendanceStatus.attended and not skip_debit:
+        # Credit was successfully deducted — thank the player
+        user = await db.get(User, user_id)
+        if user and campaign:
+            await notify.notify_credit_deducted(
+                user.telegram_id, campaign.title, session_date
+            )
 
     user = await db.get(User, user_id)
     return attendance_to_read(attendance, user)

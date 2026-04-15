@@ -11,7 +11,7 @@ class SessionCreate(BaseModel):
     room_id: int
     starts_at: datetime
     ends_at: datetime
-    capacity: int
+    capacity: Optional[int] = None  # if None, inherited from campaign
     description: Optional[str] = None
 
 

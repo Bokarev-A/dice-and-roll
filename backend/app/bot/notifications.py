@@ -414,6 +414,66 @@ async def notify_gm_player_response(
     await send_message(gm_telegram_id, text)
 
 
+async def notify_gm_6h_confirmation(
+    telegram_id: int,
+    campaign_title: str,
+    starts_at_str: str,
+    room_name: str,
+    session_id: int,
+):
+    text = (
+        f"⏰ <b>Сессия через 6 часов</b>\n\n"
+        f"Кампания: {campaign_title}\n"
+        f"Время: {starts_at_str}\n"
+        f"Комната: {room_name}\n\n"
+        f"Подтвердите, что сессия состоится."
+    )
+    reply_markup = {
+        "inline_keyboard": [[
+            {"text": "✅ Всё в силе",  "callback_data": f"gm6_ok_{session_id}"},
+            {"text": "❌ Отменить",    "callback_data": f"gm6_no_{session_id}"},
+        ]]
+    }
+    await send_message(telegram_id, text, reply_markup=reply_markup)
+
+
+async def notify_player_6h_reminder(
+    telegram_id: int,
+    campaign_title: str,
+    starts_at_str: str,
+    room_name: str,
+    signup_id: int,
+):
+    text = (
+        f"⏰ <b>Сессия через 6 часов!</b>\n\n"
+        f"Кампания: {campaign_title}\n"
+        f"Время: {starts_at_str}\n"
+        f"Комната: {room_name}\n\n"
+        f"Планируете прийти?"
+    )
+    reply_markup = {
+        "inline_keyboard": [[
+            {"text": "✅ Буду",            "callback_data": f"pl_ok_{signup_id}"},
+            {"text": "❌ Отменить запись", "callback_data": f"pl_no_{signup_id}"},
+        ]]
+    }
+    await send_message(telegram_id, text, reply_markup=reply_markup)
+
+
+async def notify_credit_deducted(
+    telegram_id: int,
+    campaign_title: str,
+    session_date: str,
+):
+    text = (
+        f"🎲 <b>Спасибо за игру!</b>\n\n"
+        f"Кампания: {campaign_title}\n"
+        f"Дата: {session_date}\n\n"
+        f"Кредит успешно списан."
+    )
+    await send_message(telegram_id, text)
+
+
 async def notify_gm_reschedule_redirect(
     gm_telegram_id: int,
     mini_app_url: str,

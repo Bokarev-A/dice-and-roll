@@ -16,6 +16,7 @@ export const campaignsApi = {
     system?: string;
     description?: string;
     visibility?: string;
+    capacity?: number;
   }) => api.post<Campaign>('/campaigns/', data).then(r => r.data),
 
   update: (id: number, data: Record<string, unknown>) =>

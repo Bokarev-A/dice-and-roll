@@ -22,6 +22,20 @@ export function CatalogPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [mineCampaigns, setMineCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [joinedIds, setJoinedIds] = useState<Set<number>>(new Set());
+
+  // Load joined campaign IDs once to determine player role across all tabs
+  useEffect(() => {
+    campaignsApi.joined().then((data) => {
+      setJoinedIds(new Set(data.map((c) => c.id)));
+    }).catch(() => {});
+  }, []);
+
+  function getRoleForCampaign(c: Campaign): 'gm' | 'player' | undefined {
+    if (c.owner_gm_user_id === user?.id) return 'gm';
+    if (joinedIds.has(c.id)) return 'player';
+    return undefined;
+  }
 
   // Create campaign form (GM only)
   const [showCreate, setShowCreate] = useState(false);
@@ -29,6 +43,7 @@ export function CatalogPage() {
   const [type, setType] = useState<'campaign' | 'oneshot'>('oneshot');
   const [system, setSystem] = useState('');
   const [description, setDescription] = useState('');
+  const [capacity, setCapacity] = useState(5);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -45,9 +60,7 @@ export function CatalogPage() {
           if (isGM) {
             const all = await campaignsApi.list();
             setMineCampaigns(
-              all.filter(
-                (c) => c.owner_gm_user_id === user?.id || user?.role === 'admin'
-              )
+              all.filter((c) => c.owner_gm_user_id === user?.id)
             );
           } else {
             const data = await campaignsApi.joined();
@@ -72,6 +85,7 @@ export function CatalogPage() {
         title: title.trim(),
         system: system.trim() || undefined,
         description: description.trim() || undefined,
+        capacity,
       });
       navigate(`/campaign/${campaign.id}`);
     } catch (err: any) {
@@ -117,6 +131,7 @@ export function CatalogPage() {
               <CampaignCard
                 key={c.id}
                 campaign={c}
+                role={getRoleForCampaign(c)}
                 onClick={() => navigate(`/campaign/${c.id}`)}
               />
             ))}
@@ -131,6 +146,7 @@ export function CatalogPage() {
               <CampaignCard
                 key={c.id}
                 campaign={c}
+                role={getRoleForCampaign(c)}
                 onClick={() => navigate(`/campaign/${c.id}`)}
               />
             ))}
@@ -142,10 +158,10 @@ export function CatalogPage() {
           {isGM && (
             <div className={styles.mineHeader}>
               <button
-                className="btn btn-primary btn-sm"
+                className="btn btn-primary btn-block"
                 onClick={() => setShowCreate(!showCreate)}
               >
-                {showCreate ? '✕' : '+ Новая кампания'}
+                {showCreate ? '✕ Закрыть' : '+ Создать игру'}
               </button>
             </div>
           )}
@@ -202,6 +218,18 @@ export function CatalogPage() {
                 />
               </div>
 
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Количество мест</label>
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={capacity}
+                  onChange={(e) => setCapacity(Number(e.target.value))}
+                />
+              </div>
+
               <button
                 className="btn btn-primary btn-block"
                 onClick={handleCreate}
@@ -224,6 +252,7 @@ export function CatalogPage() {
                 <CampaignCard
                   key={c.id}
                   campaign={c}
+                  role={getRoleForCampaign(c)}
                   onClick={() => navigate(`/campaign/${c.id}`)}
                 />
               ))}

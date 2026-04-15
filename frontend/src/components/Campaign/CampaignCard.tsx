@@ -4,17 +4,22 @@ import styles from './CampaignCard.module.css';
 
 interface CampaignCardProps {
   campaign: Campaign;
+  role?: 'gm' | 'player';
   onClick?: () => void;
 }
 
-export function CampaignCard({ campaign, onClick }: CampaignCardProps) {
+export function CampaignCard({ campaign, role, onClick }: CampaignCardProps) {
   return (
     <div className={`card ${styles.campaign}`} onClick={onClick}>
       <div className={styles.header}>
-        <Badge
-          text={campaign.type === 'campaign' ? 'Кампания' : 'Ваншот'}
-          color={campaign.type === 'campaign' ? 'purple' : 'blue'}
-        />
+        <div className={styles.badges}>
+          <Badge
+            text={campaign.type === 'campaign' ? 'Кампания' : 'Ваншот'}
+            color={campaign.type === 'campaign' ? 'purple' : 'blue'}
+          />
+          {role === 'gm' && <Badge text="ГМ" color="pink" />}
+          {role === 'player' && <Badge text="Игрок" color="green" />}
+        </div>
         <span className={styles.members}>👥 {campaign.member_count}</span>
       </div>
 

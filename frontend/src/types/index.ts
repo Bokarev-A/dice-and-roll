@@ -126,6 +126,7 @@ export type Campaign = {
   visibility: CampaignVisibility;
   status: CampaignStatus;
   member_count: number;
+  capacity: number;
   created_at: string;
 };
 

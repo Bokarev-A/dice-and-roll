@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -120,61 +120,3 @@ async def notify_campaign_members_new_session(
             )
 
 
-async def send_session_reminders(
-    db: AsyncSession, hours_before: int
-):
-    """
-    Send reminders for sessions starting in N hours.
-    Called by scheduler.
-    """
-    now = datetime.now(timezone.utc)
-    target_start = now + timedelta(hours=hours_before)
-    window = timedelta(minutes=15)
-
-    result = await db.execute(
-        select(GameSession).where(
-            and_(
-                GameSession.starts_at >= target_start - window,
-                GameSession.starts_at <= target_start + window,
-                GameSession.status.in_(["planned", "moved"]),
-            )
-        )
-    )
-    sessions = result.scalars().all()
-
-    from app.config import settings
-    import pytz
-
-    tz = pytz.timezone(settings.CLUB_TIMEZONE)
-
-    for session in sessions:
-        signups_result = await db.execute(
-            select(Signup).where(
-                and_(
-                    Signup.session_id == session.id,
-                    Signup.status == SignupStatus.confirmed,
-                )
-            )
-        )
-        signups = signups_result.scalars().all()
-
-        campaign = await db.get(Campaign, session.campaign_id)
-        campaign_title = campaign.title if campaign else ""
-
-        starts_str = session.starts_at.astimezone(tz).strftime(
-            "%d.%m.%Y %H:%M"
-        )
-        room_name = ""
-        if session.room:
-            room_name = session.room.name
-
-        for signup in signups:
-            user = await db.get(User, signup.user_id)
-            if user:
-                await bot.notify_session_reminder(
-                    user.telegram_id,
-                    campaign_title,
-                    starts_str,
-                    room_name,
-                    hours_before,
-                )

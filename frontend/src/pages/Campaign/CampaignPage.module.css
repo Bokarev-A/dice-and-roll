@@ -10,6 +10,12 @@
   gap: 8px;
 }
 
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .title {
   font-size: 1.3rem;
 }
@@ -131,4 +137,35 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.leaveBtnMuted {
+  background: transparent;
+  color: rgba(255, 107, 43, 0.45);
+  border: 1px solid rgba(255, 107, 43, 0.25);
+  font-size: 0.75rem;
+}
+
+.leaveBtnMuted:hover {
+  background: rgba(255, 107, 43, 0.06);
+  color: rgba(255, 107, 43, 0.65);
+  border-color: rgba(255, 107, 43, 0.4);
+}
+
+.leaveConfirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.leaveConfirmText {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.leaveConfirmButtons {
+  display: flex;
+  gap: 8px;
 }

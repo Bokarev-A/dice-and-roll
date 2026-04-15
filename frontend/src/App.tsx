@@ -133,6 +133,8 @@ export default function App() {
       });
       setAttempted(true);
     } else {
+      // No initData and not in dev mode — clear loading so the error screen can show
+      useAuthStore.setState({ loading: false });
       setAttempted(true);
     }
   }, []);

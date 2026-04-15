@@ -13,7 +13,7 @@ export const sessionsApi = {
     room_id: number;
     starts_at: string;
     ends_at: string;
-    capacity: number;
+    capacity?: number;
     description?: string;
   }) => api.post<GameSession>('/sessions/', data).then(r => r.data),
 

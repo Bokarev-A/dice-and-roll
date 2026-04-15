@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-from typing import List
 
 
 class Settings(BaseSettings):
@@ -16,7 +15,6 @@ class Settings(BaseSettings):
     OFFERED_TIMEOUT_HOURS: int = 24
     OFFERED_REMINDER_HOURS: int = 12
     ORDER_EXPIRY_HOURS: int = 24
-    REMINDER_HOURS_BEFORE: str = "24,2"
     ATTENDANCE_WINDOW_HOURS: int = 48
 
     WEBHOOK_URL: str = ""
@@ -28,10 +26,6 @@ class Settings(BaseSettings):
 
     SKIP_TG_VALIDATION: bool = False
     TELEGRAM_PROXY: str = ""  # e.g. http://user:pass@host:port or socks5://host:port
-
-    @property
-    def reminder_hours(self) -> List[int]:
-        return [int(h.strip()) for h in self.REMINDER_HOURS_BEFORE.split(",")]
 
     class Config:
         env_file = ".env"

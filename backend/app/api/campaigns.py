@@ -59,6 +59,7 @@ async def campaigns_with_counts(
             visibility=camp.visibility,
             status=camp.status,
             member_count=cnt,
+            capacity=camp.capacity,
             created_at=camp.created_at,
         )
         for camp, cnt in rows
@@ -157,6 +158,7 @@ async def create_campaign(
         owner_gm_user_id=current_user.id,
         visibility=body.visibility,
         funding=funding,
+        capacity=body.capacity,
     )
     db.add(campaign)
     await db.commit()
@@ -173,6 +175,7 @@ async def create_campaign(
         visibility=campaign.visibility,
         status=campaign.status,
         member_count=0,
+        capacity=campaign.capacity,
         created_at=campaign.created_at,
     )
 

@@ -9,6 +9,13 @@
   margin-bottom: 10px;
 }
 
+.badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .members {
   font-family: var(--font-mono);
   font-size: 0.75rem;

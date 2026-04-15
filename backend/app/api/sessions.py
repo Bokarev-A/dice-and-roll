@@ -159,6 +159,9 @@ async def create_session(
             detail="Room not found",
         )
 
+    # Resolve capacity: use provided value or fall back to campaign default
+    capacity = body.capacity if body.capacity is not None else campaign.capacity
+
     # Validate times
     if body.starts_at >= body.ends_at:
         raise HTTPException(
@@ -166,7 +169,7 @@ async def create_session(
             detail="starts_at must be before ends_at",
         )
 
-    if body.capacity < 1:
+    if capacity < 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="capacity must be at least 1",
@@ -180,7 +183,7 @@ async def create_session(
         room_id=body.room_id,
         starts_at=body.starts_at,
         ends_at=body.ends_at,
-        capacity=body.capacity,
+        capacity=capacity,
         description=body.description,
         status=SessionStatus.planned,
     )

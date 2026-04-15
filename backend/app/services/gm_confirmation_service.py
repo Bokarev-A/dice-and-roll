@@ -189,6 +189,117 @@ async def handle_player_ok(db: AsyncSession, signup_id: int, from_user: dict) ->
     await bot.notify_gm_player_response(gm.telegram_id, player_name, campaign.title, "confirmed")
 
 
+async def send_gm_6h_notifications(db: AsyncSession) -> None:
+    """
+    Send 6h-ahead confirmation requests to GMs.
+    Called by the scheduler every 15 minutes.
+    """
+    now = datetime.now(timezone.utc)
+    target = now + timedelta(hours=6)
+    window = timedelta(minutes=15)
+
+    result = await db.execute(
+        select(GameSession).where(
+            and_(
+                GameSession.starts_at >= target - window,
+                GameSession.starts_at <= target + window,
+                GameSession.status.in_([SessionStatus.planned, SessionStatus.moved]),
+                GameSession.gm_6h_notified_at.is_(None),
+            )
+        )
+    )
+    sessions = list(result.scalars().all())
+    if not sessions:
+        return
+
+    tz = pytz.timezone(settings.CLUB_TIMEZONE)
+
+    for session in sessions:
+        campaign = await db.get(Campaign, session.campaign_id)
+        if not campaign:
+            continue
+        gm = await db.get(User, campaign.owner_gm_user_id)
+        if not gm:
+            continue
+
+        starts_str = session.starts_at.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+        room_name = session.room.name if session.room else ""
+
+        await bot.notify_gm_6h_confirmation(
+            gm.telegram_id,
+            campaign.title,
+            starts_str,
+            room_name,
+            session.id,
+        )
+        session.gm_6h_notified_at = now
+
+    await db.commit()
+    logger.info("Sent 6h GM confirmation for %d sessions", len(sessions))
+
+
+async def handle_gm_6h_confirm(db: AsyncSession, session_id: int, from_user: dict) -> None:
+    """GM confirmed 6h-ahead — send reminder with buttons to all confirmed players."""
+    session = await db.get(GameSession, session_id)
+    if not session or session.status not in (SessionStatus.planned, SessionStatus.moved):
+        return
+
+    gm = await _verify_gm(db, session, from_user["id"])
+    if not gm:
+        return
+
+    if session.players_6h_reminded_at is not None:
+        return  # idempotent: already sent
+
+    campaign = await db.get(Campaign, session.campaign_id)
+    tz = pytz.timezone(settings.CLUB_TIMEZONE)
+    starts_str = session.starts_at.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+    room_name = session.room.name if session.room else ""
+
+    result = await db.execute(
+        select(Signup).where(
+            and_(
+                Signup.session_id == session_id,
+                Signup.status == SignupStatus.confirmed,
+            )
+        )
+    )
+    signups = list(result.scalars().all())
+
+    for signup in signups:
+        player = await db.get(User, signup.user_id)
+        if player:
+            await bot.notify_player_6h_reminder(
+                player.telegram_id,
+                campaign.title,
+                starts_str,
+                room_name,
+                signup.id,
+            )
+
+    session.players_6h_reminded_at = datetime.now(timezone.utc)
+    await db.commit()
+    logger.info("GM confirmed 6h for session %d, notified %d players", session_id, len(signups))
+
+
+async def handle_gm_6h_cancel(db: AsyncSession, session_id: int, from_user: dict) -> None:
+    """GM cancelled session at 6h checkpoint — update status and notify players."""
+    session = await db.get(GameSession, session_id)
+    if not session or session.status == SessionStatus.canceled:
+        return
+
+    gm = await _verify_gm(db, session, from_user["id"])
+    if not gm:
+        return
+
+    session.status = SessionStatus.canceled
+    await db.commit()
+    await db.refresh(session)
+
+    await notify_session_participants(db, session, "canceled")
+    logger.info("GM cancelled session %d via 6h webhook", session_id)
+
+
 async def handle_player_cancel(db: AsyncSession, signup_id: int, from_user: dict) -> None:
     """Player cancelled signup — cancel in DB and notify GM."""
     signup = await db.get(Signup, signup_id)

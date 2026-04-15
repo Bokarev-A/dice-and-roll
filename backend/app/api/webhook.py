@@ -10,6 +10,8 @@ from app.services.gm_confirmation_service import (
     handle_gm_cancel,
     handle_gm_confirm,
     handle_gm_move,
+    handle_gm_6h_confirm,
+    handle_gm_6h_cancel,
     handle_player_cancel,
     handle_player_ok,
 )
@@ -87,6 +89,13 @@ async def telegram_webhook(
             toast_text = "📅 Откройте приложение для переноса"
         elif data.startswith("gm_no_"):
             await handle_gm_cancel(db, int(data[6:]), from_user)
+            toast_text = "❌ Сессия отменена, игроки уведомлены"
+            show_alert = True
+        elif data.startswith("gm6_ok_"):
+            await handle_gm_6h_confirm(db, int(data[7:]), from_user)
+            toast_text = "✅ Игроки получили напоминание"
+        elif data.startswith("gm6_no_"):
+            await handle_gm_6h_cancel(db, int(data[7:]), from_user)
             toast_text = "❌ Сессия отменена, игроки уведомлены"
             show_alert = True
         elif data.startswith("pl_ok_"):

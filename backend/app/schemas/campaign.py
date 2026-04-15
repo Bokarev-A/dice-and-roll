@@ -12,6 +12,7 @@ class CampaignCreate(BaseModel):
     system: Optional[str] = None
     description: Optional[str] = None
     visibility: CampaignVisibility = CampaignVisibility.public
+    capacity: int = 5
 
 
 class CampaignUpdate(BaseModel):
@@ -20,6 +21,7 @@ class CampaignUpdate(BaseModel):
     description: Optional[str] = None
     visibility: Optional[CampaignVisibility] = None
     status: Optional[CampaignStatus] = None
+    capacity: Optional[int] = None
 
 
 class CampaignRead(BaseModel):
@@ -33,6 +35,7 @@ class CampaignRead(BaseModel):
     visibility: CampaignVisibility
     status: CampaignStatus
     member_count: int = 0
+    capacity: int = 5
     created_at: datetime
 
     class Config:

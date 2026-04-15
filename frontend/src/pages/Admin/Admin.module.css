@@ -168,6 +168,29 @@
   gap: 6px;
 }
 
+.roleConfirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 107, 43, 0.07);
+  border: 1px solid rgba(255, 107, 43, 0.25);
+  border-radius: var(--radius-sm);
+}
+
+.roleConfirmText {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.roleConfirmActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* Unpaid cards */
 .unpaidCard {
   display: flex;
