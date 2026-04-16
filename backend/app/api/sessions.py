@@ -13,7 +13,7 @@ from app.models.room import Room
 from app.models.signup import Signup, SignupStatus
 from app.models.credit import CreditBatch, CreditBatchType
 from app.models.ledger import LedgerEntry, LedgerType
-from app.schemas.session import SessionCreate, SessionUpdate, SessionRead
+from app.schemas.session import SessionCreate, SessionUpdate, SessionRead, GmMonthlyStats, GmSessionEntry
 from app.api.deps import get_current_user, require_gm, require_admin
 from app.services.signup_service import get_confirmed_count, get_waitlist_count, process_waitlist, auto_signup_members
 from app.services.notification_service import (
@@ -324,6 +324,65 @@ async def my_gm_sessions(
     )
     sessions = result.scalars().all()
     return [await session_to_read(db, s) for s in sessions]
+
+
+@router.get("/gm/monthly-stats", response_model=GmMonthlyStats)
+async def gm_monthly_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_gm),
+):
+    """Done sessions by current GM for the current calendar month."""
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    _, last_day = calendar.monthrange(now.year, now.month)
+    month_end = now.replace(day=last_day, hour=23, minute=59, second=59, microsecond=999999)
+
+    result = await db.execute(
+        select(GameSession, Campaign)
+        .join(Campaign, GameSession.campaign_id == Campaign.id)
+        .where(
+            Campaign.owner_gm_user_id == current_user.id,
+            GameSession.status == SessionStatus.done,
+            GameSession.starts_at >= month_start,
+            GameSession.starts_at <= month_end,
+        )
+        .order_by(GameSession.starts_at.asc())
+    )
+    rows = result.all()
+
+    entries: list[GmSessionEntry] = []
+    campaigns_count = 0
+    oneshots_count = 0
+
+    for session, campaign in rows:
+        # Count attendees
+        att_result = await db.execute(
+            select(func.count()).select_from(Signup).where(
+                Signup.session_id == session.id,
+                Signup.status == SignupStatus.confirmed,
+            )
+        )
+        attendees_count = att_result.scalar() or 0
+
+        entries.append(GmSessionEntry(
+            session_id=session.id,
+            campaign_title=campaign.title,
+            campaign_type=campaign.type.value,
+            system=campaign.system,
+            starts_at=session.starts_at,
+            attendees_count=attendees_count,
+        ))
+
+        if campaign.type.value == "campaign":
+            campaigns_count += 1
+        else:
+            oneshots_count += 1
+
+    return GmMonthlyStats(
+        campaigns_count=campaigns_count,
+        oneshots_count=oneshots_count,
+        sessions=entries,
+    )
 
 
 @router.get("/admin/monthly-stats")

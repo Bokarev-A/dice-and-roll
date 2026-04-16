@@ -3,35 +3,47 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { creditsApi } from '../../api/credits';
 import { ordersApi } from '../../api/orders';
-import type { CreditBalance, Order, LedgerEntry } from '../../types/index';
+import { sessionsApi } from '../../api/sessions';
+import type { CreditBalance, Order, LedgerEntry, GmMonthlyStats } from '../../types/index';
 import { BalanceCard } from '../../components/Credit/BalanceCard';
 import { OrderBadge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
-import { formatDate, formatDateTime, formatPrice, formatCredits } from '../../utils/format';
+import { formatDate, formatDateWithDay, formatDateTime, formatPrice, formatCredits } from '../../utils/format';
 import styles from './ProfilePage.module.css';
 
-type Tab = 'credits' | 'orders' | 'history';
+type Tab = 'credits' | 'orders' | 'history' | 'sessions';
+
+const MONTH_NAMES = [
+  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+];
 
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const isGM = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
   const [tab, setTab] = useState<Tab>('credits');
   const [balance, setBalance] = useState<CreditBalance | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [history, setHistory] = useState<LedgerEntry[]>([]);
+  const [gmStats, setGmStats] = useState<GmMonthlyStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [b, o, h] = await Promise.all([
+        const requests: Promise<any>[] = [
           creditsApi.balance(),
           ordersApi.myOrders(),
           creditsApi.history(),
-        ]);
+        ];
+        if (isGM) requests.push(sessionsApi.gmMonthlyStats());
+
+        const [b, o, h, gm] = await Promise.all(requests);
         setBalance(b);
         setOrders(o);
         setHistory(h);
+        if (gm) setGmStats(gm);
       } catch {
         // silent
       } finally {
@@ -45,6 +57,8 @@ export function ProfilePage() {
 
   const showRentals = user?.role === 'private_gm' || user?.role === 'admin';
   const showGmRewards = user?.role === 'gm' || user?.role === 'admin';
+  const now = new Date();
+  const monthLabel = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
@@ -85,6 +99,14 @@ export function ProfilePage() {
 
       {/* Tabs */}
       <div className={styles.tabs}>
+        {isGM && (
+          <button
+            className={`${styles.tab} ${tab === 'sessions' ? styles.tabActive : ''}`}
+            onClick={() => setTab('sessions')}
+          >
+            Сессии
+          </button>
+        )}
         {(['credits', 'orders', 'history'] as Tab[]).map((t) => (
           <button
             key={t}
@@ -95,6 +117,48 @@ export function ProfilePage() {
           </button>
         ))}
       </div>
+
+      {/* Sessions tab (GM only) */}
+      {tab === 'sessions' && isGM && (
+        <div className={styles.list}>
+          <h3 className={styles.sectionTitle}>
+            <span className={styles.emoji}>🎲</span> {monthLabel.toUpperCase()}
+          </h3>
+
+          {gmStats && (gmStats.campaigns_count > 0 || gmStats.oneshots_count > 0) && (
+            <div className={`card ${styles.gmStatsSummary}`}>
+              {gmStats.campaigns_count > 0 && (
+                <span>📜 Кампаний: <strong>{gmStats.campaigns_count}</strong></span>
+              )}
+              {gmStats.oneshots_count > 0 && (
+                <span>⚡ Ваншотов: <strong>{gmStats.oneshots_count}</strong></span>
+              )}
+            </div>
+          )}
+
+          {!gmStats || gmStats.sessions.length === 0 ? (
+            <p className={styles.empty}>В этом месяце сессий не проводилось</p>
+          ) : (
+            gmStats.sessions.map((s) => (
+              <div key={s.session_id} className={`card ${styles.gmSessionCard}`}>
+                <div className={styles.gmSessionHeader}>
+                  <span className={styles.gmSessionTitle}>{s.campaign_title}</span>
+                  <span className={`badge ${s.campaign_type === 'campaign' ? 'badge-purple' : 'badge-blue'}`}>
+                    {s.campaign_type === 'campaign' ? 'Кампания' : 'Ваншот'}
+                  </span>
+                </div>
+                {s.system && (
+                  <div className={styles.gmSessionSystem}>{s.system}</div>
+                )}
+                <div className={styles.gmSessionMeta}>
+                  <span>📅 {formatDateWithDay(s.starts_at)}</span>
+                  <span>👥 {s.attendees_count} игр.</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Credits tab */}
       {tab === 'credits' && balance && (

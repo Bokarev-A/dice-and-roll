@@ -21,6 +21,7 @@ class CalendarEntry(BaseModel):
     capacity: int
     confirmed_count: int
     description: Optional[str] = None
+    system: Optional[str] = None
 
 
 class PublicSessionEntry(BaseModel):

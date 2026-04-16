@@ -72,6 +72,13 @@
   margin-bottom: 4px;
 }
 
+.sessionSystem {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
 .sessionDescription {
   font-family: var(--font-body);
   font-size: 0.78rem;

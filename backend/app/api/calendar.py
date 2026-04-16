@@ -43,6 +43,7 @@ async def _build_entry(
         campaign_id=session.campaign_id,
         campaign_title=campaign.title if campaign else "",
         campaign_type=campaign.type.value if campaign else "",
+        system=campaign.system if campaign else None,
         room_name=room.name if room else "",
         starts_at=session.starts_at,
         ends_at=session.ends_at,

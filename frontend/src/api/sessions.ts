@@ -1,5 +1,5 @@
 import api from './client';
-import type { GameSession, RoomMonthlyStats } from '../types/index';
+import type { GameSession, RoomMonthlyStats, GmMonthlyStats } from '../types/index';
 
 export const sessionsApi = {
   getByCampaign: (campaignId: number) =>
@@ -22,6 +22,9 @@ export const sessionsApi = {
 
   myGmSessions: () =>
     api.get<GameSession[]>('/sessions/gm/my').then(r => r.data),
+
+  gmMonthlyStats: () =>
+    api.get<GmMonthlyStats>('/sessions/gm/monthly-stats').then(r => r.data),
 
   adminMonthlyStats: () =>
     api.get<RoomMonthlyStats[]>('/sessions/admin/monthly-stats').then(r => r.data),

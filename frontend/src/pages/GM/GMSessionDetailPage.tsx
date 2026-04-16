@@ -177,7 +177,7 @@ export function GMSessionDetailPage() {
           className="btn btn-secondary btn-sm"
           onClick={() => navigate(`/gm/attendance/${session.id}`)}
         >
-          📝 Посещаемость
+          ✅ Отметить посещаемость
         </button>
         {session.status !== 'canceled' && session.status !== 'done' && (
           <>

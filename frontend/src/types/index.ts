@@ -26,6 +26,21 @@ export type RoomMonthlyStats = {
   rentals_spent: number;
 };
 
+export type GmSessionEntry = {
+  session_id: number;
+  campaign_title: string;
+  campaign_type: 'campaign' | 'oneshot';
+  system?: string;
+  starts_at: string;
+  attendees_count: number;
+};
+
+export type GmMonthlyStats = {
+  campaigns_count: number;
+  oneshots_count: number;
+  sessions: GmSessionEntry[];
+};
+
 export type Product = {
   id: number;
   name: string;
@@ -211,6 +226,7 @@ export type CalendarEntry = {
   confirmed_count: number;
   is_gm?: boolean;
   description?: string;
+  system?: string;
 };
 
 export type PublicSessionEntry = {

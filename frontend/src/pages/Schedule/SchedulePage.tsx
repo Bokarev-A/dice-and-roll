@@ -141,6 +141,9 @@ export function SchedulePage() {
                       <span className="badge badge-blue">{entry.room_name}</span>
                     </div>
                     <div className={styles.title}>{entry.campaign_title}</div>
+                    {entry.system && (
+                      <div className={styles.system}>{entry.system}</div>
+                    )}
                     <div className={styles.footer}>
                       <span className={styles.capacity}>
                         {entry.confirmed_count}/{entry.capacity}

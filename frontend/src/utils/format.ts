@@ -10,6 +10,16 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+export function formatDateWithDay(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ru-RU', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: TIMEZONE,
+  });
+}
+
 export function formatTime(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleTimeString('ru-RU', {

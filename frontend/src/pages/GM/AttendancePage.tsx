@@ -102,10 +102,10 @@ export function AttendancePage() {
       {!initialized ? (
         <div style={{ textAlign: 'center', padding: '20px' }}>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
-            Нажмите кнопку для создания записей посещаемости
+            Игра прошла? Нажмите кнопку ниже и отметьте, кто из игроков присутствовал — это спишет кредиты за сессию.
           </p>
           <button className="btn btn-primary btn-block" onClick={handleInit}>
-            📝 Начать отметку
+            ✅ Игра состоялась
           </button>
         </div>
       ) : (

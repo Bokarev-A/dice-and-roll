@@ -9,7 +9,7 @@ import type { CreditBalance, CalendarEntry, Signup, RoomMonthlyStats } from '../
 import { BalanceCard } from '../../components/Credit/BalanceCard';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
-import { formatDate, formatTime } from '../../utils/format';
+import { formatDateWithDay, formatTime } from '../../utils/format';
 import { SignupBadge } from '../../components/UI/Badge';
 import { useUIStore } from '../../store/useUIStore';
 import styles from './HomePage.module.css';
@@ -157,11 +157,14 @@ export function HomePage() {
                   >
                     <div className={styles.sessionTop}>
                       <div className={styles.sessionDate}>
-                        <span className={styles.sessionDay}>{formatDate(entry.starts_at)}</span>
+                        <span className={styles.sessionDay}>{formatDateWithDay(entry.starts_at)}</span>
                         <span className={styles.sessionTime}>{formatTime(entry.starts_at)}</span>
                       </div>
                     </div>
                     <div className={styles.sessionTitle}>{entry.campaign_title}</div>
+                    {entry.system && (
+                      <div className={styles.sessionSystem}>{entry.system}</div>
+                    )}
                     <div className={styles.sessionMeta}>
                       🚪 {entry.room_name} · 👥 {entry.confirmed_count}/{entry.capacity}
                     </div>
@@ -212,7 +215,7 @@ export function HomePage() {
                     <div className={styles.sessionTop}>
                       <div className={styles.sessionDate}>
                         <span className={styles.sessionDay}>
-                          {formatDate(entry.starts_at)}
+                          {formatDateWithDay(entry.starts_at)}
                         </span>
                         <span className={styles.sessionTime}>
                           {formatTime(entry.starts_at)}
@@ -227,6 +230,9 @@ export function HomePage() {
                     <div className={styles.sessionTitle}>
                       {entry.campaign_title}
                     </div>
+                    {entry.system && (
+                      <div className={styles.sessionSystem}>{entry.system}</div>
+                    )}
                     {entry.description && (
                       <div className={styles.sessionDescription}>
                         {entry.description}

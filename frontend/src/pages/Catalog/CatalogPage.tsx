@@ -17,7 +17,7 @@ export function CatalogPage() {
   const showToast = useUIStore((s) => s.showToast);
   const isGM = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
 
-  const [tab, setTab] = useState<Tab>('oneshots');
+  const [tab, setTab] = useState<Tab>('mine');
   const [oneshots, setOneshots] = useState<Campaign[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [mineCampaigns, setMineCampaigns] = useState<Campaign[]>([]);
@@ -58,10 +58,17 @@ export function CatalogPage() {
           setCampaigns(data.filter((c) => c.type === 'campaign'));
         } else {
           if (isGM) {
-            const all = await campaignsApi.list();
-            setMineCampaigns(
-              all.filter((c) => c.owner_gm_user_id === user?.id)
-            );
+            const [owned, joined] = await Promise.all([
+              campaignsApi.my(),
+              campaignsApi.joined(),
+            ]);
+            const ownedIds = new Set(owned.map((c) => c.id));
+            const merged = [
+              ...owned,
+              ...joined.filter((c) => !ownedIds.has(c.id)),
+            ];
+            setMineCampaigns(merged);
+            setJoinedIds(new Set(joined.map((c) => c.id)));
           } else {
             const data = await campaignsApi.joined();
             setMineCampaigns(data);
@@ -101,6 +108,12 @@ export function CatalogPage() {
 
       <div className={styles.tabs}>
         <button
+          className={`${styles.tab} ${tab === 'mine' ? styles.tabActive : ''}`}
+          onClick={() => setTab('mine')}
+        >
+          Мои
+        </button>
+        <button
           className={`${styles.tab} ${tab === 'oneshots' ? styles.tabActive : ''}`}
           onClick={() => setTab('oneshots')}
         >
@@ -111,12 +124,6 @@ export function CatalogPage() {
           onClick={() => setTab('campaigns')}
         >
           Кампании
-        </button>
-        <button
-          className={`${styles.tab} ${tab === 'mine' ? styles.tabActive : ''}`}
-          onClick={() => setTab('mine')}
-        >
-          Мои
         </button>
       </div>
 

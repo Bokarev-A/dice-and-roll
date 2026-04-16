@@ -4,6 +4,8 @@ import type { Campaign, CampaignMember } from '../types/index';
 export const campaignsApi = {
   list: () => api.get<Campaign[]>('/campaigns/').then(r => r.data),
 
+  my: () => api.get<Campaign[]>('/campaigns/my').then(r => r.data),
+
   joined: () =>
     api.get<Campaign[]>('/campaigns/joined').then(r => r.data),
 

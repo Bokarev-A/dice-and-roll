@@ -41,3 +41,18 @@ class SessionRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class GmSessionEntry(BaseModel):
+    session_id: int
+    campaign_title: str
+    campaign_type: str
+    system: Optional[str] = None
+    starts_at: datetime
+    attendees_count: int
+
+
+class GmMonthlyStats(BaseModel):
+    campaigns_count: int
+    oneshots_count: int
+    sessions: list[GmSessionEntry]
