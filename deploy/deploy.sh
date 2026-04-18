@@ -34,14 +34,18 @@ npm run build
 echo "=== [5/5] Перезапуск сервиса ==="
 systemctl restart dice-and-roll
 
-# Ждём запуска и проверяем health
-sleep 3
-if curl -sf http://127.0.0.1:8000/api/health > /dev/null; then
-    echo ""
-    echo "✓ Деплой успешен. Сервис работает."
-else
-    echo ""
-    echo "✗ Health check не прошёл! Проверьте логи:"
-    echo "  journalctl -u dice-and-roll -n 50"
-    exit 1
-fi
+# Ждём запуска и проверяем health (до 30 секунд, с шагом 2с)
+echo "Ожидание запуска сервиса..."
+for i in $(seq 1 15); do
+    if curl -sf http://127.0.0.1:8000/api/health > /dev/null 2>&1; then
+        echo ""
+        echo "✓ Деплой успешен. Сервис работает."
+        exit 0
+    fi
+    sleep 2
+done
+
+echo ""
+echo "✗ Health check не прошёл! Проверьте логи:"
+echo "  journalctl -u dice-and-roll -n 50"
+exit 1
