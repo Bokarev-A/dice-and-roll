@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models.user import User, UserRole
 from app.models.session import GameSession
 from app.models.campaign import Campaign, CampaignFunding
-from app.models.attendance import Attendance
+from app.models.attendance import Attendance, AttendanceStatus
 from app.schemas.attendance import AttendanceUpdate, AttendanceRead, UnpaidRead
 from app.api.deps import get_current_user, require_gm, require_admin
 from app.services.attendance_service import (
@@ -68,6 +68,7 @@ def attendance_to_read(attendance: Attendance, user: User | None = None) -> Atte
         user_name=user_name,
         status=attendance.status,
         unpaid=attendance.unpaid,
+        gm_credit_pending=attendance.gm_credit_pending,
         marked_by=attendance.marked_by,
         created_at=attendance.created_at,
         updated_at=attendance.updated_at,
@@ -178,7 +179,20 @@ async def update_attendance(
     tz = pytz.timezone(settings.CLUB_TIMEZONE)
     session_date = session.starts_at.astimezone(tz).strftime("%d.%m.%Y")
 
-    if attendance.unpaid:
+    if attendance.gm_credit_pending:
+        user = await db.get(User, user_id)
+        admin_ids = await get_admin_telegram_ids(db)
+        if admin_ids and user and campaign:
+            player_name = f"{user.first_name} {user.last_name or ''}".strip()
+            await notify.notify_admin_gm_credit_pending(
+                admin_ids,
+                player_name=player_name,
+                player_username=user.username,
+                campaign_title=campaign.title,
+                session_date=session_date,
+                attendance_id=attendance.id,
+            )
+    elif attendance.unpaid:
         user = await db.get(User, user_id)
         if user and campaign:
             await notify.notify_unpaid(

@@ -325,3 +325,87 @@ async def handle_player_cancel(db: AsyncSession, signup_id: int, from_user: dict
             gm.telegram_id, player_name, campaign.title, "cancelled"
         )
     logger.info("Player %d cancelled signup %d via webhook", player.id, signup_id)
+
+
+# ── Admin GM credit approval ─────────────────────────────────────
+
+
+async def handle_admin_gc_approve(
+    db: AsyncSession, attendance_id: int, from_user: dict
+) -> None:
+    """Admin approved gm_reward credit deduction for a player."""
+    from app.models.attendance import Attendance
+    from app.services.credit_service import debit_gm_reward_credit, debit_credit, debit_credit_as_debt
+
+    attendance = await db.get(Attendance, attendance_id)
+    if not attendance or not attendance.gm_credit_pending:
+        return  # Already handled — idempotent
+
+    result = await db.execute(select(User).where(User.telegram_id == from_user["id"]))
+    admin_user = result.scalar_one_or_none()
+    admin_id = admin_user.id if admin_user else None
+
+    entry = await debit_gm_reward_credit(db, attendance.user_id, attendance.session_id, admin_id)
+    attendance.gm_credit_pending = False
+    if entry is None:
+        # No gm_reward left — fall back to regular credit
+        entry = await debit_credit(db, attendance.user_id, attendance.session_id, admin_id)
+        if entry is None:
+            await debit_credit_as_debt(db, attendance.user_id, attendance.session_id, admin_id)
+            attendance.unpaid = True
+    await db.commit()
+
+    user = await db.get(User, attendance.user_id)
+    session = await db.get(GameSession, attendance.session_id)
+    campaign = await db.get(Campaign, session.campaign_id) if session else None
+    if user and campaign and session:
+        tz = pytz.timezone(settings.CLUB_TIMEZONE)
+        session_date = session.starts_at.astimezone(tz).strftime("%d.%m.%Y")
+        if attendance.unpaid:
+            await bot.notify_unpaid(user.telegram_id, campaign.title, session_date)
+        else:
+            await bot.notify_credit_deducted(user.telegram_id, campaign.title, session_date)
+
+    logger.info(
+        "Admin %s approved gm_reward deduction for attendance %d",
+        from_user.get("id"), attendance_id,
+    )
+
+
+async def handle_admin_gc_deny(
+    db: AsyncSession, attendance_id: int, from_user: dict
+) -> None:
+    """Admin denied gm_reward deduction — deduct regular credit instead."""
+    from app.models.attendance import Attendance
+    from app.services.credit_service import debit_credit, debit_credit_as_debt
+
+    attendance = await db.get(Attendance, attendance_id)
+    if not attendance or not attendance.gm_credit_pending:
+        return  # Already handled — idempotent
+
+    result = await db.execute(select(User).where(User.telegram_id == from_user["id"]))
+    admin_user = result.scalar_one_or_none()
+    admin_id = admin_user.id if admin_user else None
+
+    entry = await debit_credit(db, attendance.user_id, attendance.session_id, admin_id)
+    if entry is None:
+        await debit_credit_as_debt(db, attendance.user_id, attendance.session_id, admin_id)
+        attendance.unpaid = True
+    attendance.gm_credit_pending = False
+    await db.commit()
+
+    user = await db.get(User, attendance.user_id)
+    session = await db.get(GameSession, attendance.session_id)
+    campaign = await db.get(Campaign, session.campaign_id) if session else None
+    if user and campaign and session:
+        tz = pytz.timezone(settings.CLUB_TIMEZONE)
+        session_date = session.starts_at.astimezone(tz).strftime("%d.%m.%Y")
+        if attendance.unpaid:
+            await bot.notify_unpaid(user.telegram_id, campaign.title, session_date)
+        else:
+            await bot.notify_credit_deducted(user.telegram_id, campaign.title, session_date)
+
+    logger.info(
+        "Admin %s denied gm_reward deduction for attendance %d",
+        from_user.get("id"), attendance_id,
+    )

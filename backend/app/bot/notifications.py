@@ -107,6 +107,33 @@ async def notify_order_rejected(
     await send_message(telegram_id, text)
 
 
+async def notify_admin_gm_credit_pending(
+    admin_telegram_ids: List[int],
+    player_name: str,
+    player_username: Optional[str],
+    campaign_title: str,
+    session_date: str,
+    attendance_id: int,
+):
+    """Notify admins that a player with a gm_reward credit attended — ask to approve or deny deduction."""
+    username_str = f"@{player_username}" if player_username else "нет username"
+    text = (
+        f"🎲 <b>Мастерский кредит: подтвердите списание</b>\n\n"
+        f"Игрок: {player_name} ({username_str})\n"
+        f"Кампания: {campaign_title}\n"
+        f"Дата сессии: {session_date}\n\n"
+        f"Списать мастерский кредит с игрока?"
+    )
+    reply_markup = {
+        "inline_keyboard": [[
+            {"text": "✅ Списать", "callback_data": f"adm_gc_ok_{attendance_id}"},
+            {"text": "❌ Отказать", "callback_data": f"adm_gc_no_{attendance_id}"},
+        ]]
+    }
+    for admin_id in admin_telegram_ids:
+        await send_message(admin_id, text, reply_markup=reply_markup)
+
+
 # ── Session notifications ────────────────────────────────────────
 
 

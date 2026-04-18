@@ -14,6 +14,8 @@ from app.services.gm_confirmation_service import (
     handle_gm_6h_cancel,
     handle_player_cancel,
     handle_player_ok,
+    handle_admin_gc_approve,
+    handle_admin_gc_deny,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,6 +106,12 @@ async def telegram_webhook(
         elif data.startswith("pl_no_"):
             await handle_player_cancel(db, int(data[6:]), from_user)
             toast_text = "❌ Запись отменена"
+        elif data.startswith("adm_gc_ok_"):
+            await handle_admin_gc_approve(db, int(data[10:]), from_user)
+            toast_text = "✅ Мастерский кредит списан"
+        elif data.startswith("adm_gc_no_"):
+            await handle_admin_gc_deny(db, int(data[10:]), from_user)
+            toast_text = "❌ Списан обычный кредит"
         else:
             logger.debug("Unknown callback data: %s", data)
     except Exception:

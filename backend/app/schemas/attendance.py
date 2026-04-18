@@ -17,6 +17,7 @@ class AttendanceRead(BaseModel):
     user_name: str = ""
     status: AttendanceStatus
     unpaid: bool
+    gm_credit_pending: bool = False
     marked_by: Optional[int] = None
     created_at: datetime
     updated_at: datetime

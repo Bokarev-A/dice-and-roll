@@ -33,6 +33,7 @@ class Attendance(Base):
         nullable=False,
     )
     unpaid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    gm_credit_pending: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     marked_by: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=True
     )
