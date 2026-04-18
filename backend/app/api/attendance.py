@@ -159,6 +159,11 @@ async def update_attendance(
         db, session_id, user_id, body.status, current_user.id, skip_debit=skip_debit
     )
 
+    # Snapshot flags before subsequent commits expire the ORM object
+    gm_credit_pending = attendance.gm_credit_pending
+    unpaid = attendance.unpaid
+    attendance_id = attendance.id
+
     # Grant GM reward for club-funded campaigns (idempotent — fires once per session)
     if campaign and campaign.funding == CampaignFunding.club:
         await grant_gm_reward(db, campaign.owner_gm_user_id, session_id)
@@ -179,7 +184,7 @@ async def update_attendance(
     tz = pytz.timezone(settings.CLUB_TIMEZONE)
     session_date = session.starts_at.astimezone(tz).strftime("%d.%m.%Y")
 
-    if attendance.gm_credit_pending:
+    if gm_credit_pending:
         user = await db.get(User, user_id)
         admin_ids = await get_admin_telegram_ids(db)
         if admin_ids and user and campaign:
@@ -190,9 +195,9 @@ async def update_attendance(
                 player_username=user.username,
                 campaign_title=campaign.title,
                 session_date=session_date,
-                attendance_id=attendance.id,
+                attendance_id=attendance_id,
             )
-    elif attendance.unpaid:
+    elif unpaid:
         user = await db.get(User, user_id)
         if user and campaign:
             await notify.notify_unpaid(
