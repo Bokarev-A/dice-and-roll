@@ -4,55 +4,94 @@
   gap: 16px;
 }
 
-/* ── Week navigation ── */
-.weekNav {
+/* ── Day strip ── */
+.stripRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 4px;
 }
 
-.navArrow {
+.stripArrow {
   background: transparent;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--neon-blue);
-  font-size: 1.1rem;
-  padding: 6px 14px;
+  font-size: 1rem;
+  padding: 6px 8px;
   cursor: pointer;
   transition: var(--transition);
   line-height: 1;
+  flex-shrink: 0;
+  width: 34px;
 }
 
-.navArrow:hover {
+.stripArrow:hover {
   border-color: var(--neon-blue);
   box-shadow: 0 0 10px var(--neon-blue-glow);
 }
 
-.weekLabel {
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  color: var(--text-primary);
-  text-align: center;
+.dayStrip {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
   flex: 1;
+}
+
+.dayPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  flex: 1;
+  min-width: 0;
+}
+
+.dayPill:hover {
+  border-color: var(--border-color);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dayPillToday {
+  border-color: var(--neon-pink);
+  box-shadow: 0 0 8px var(--neon-pink-glow);
+}
+
+.dayPillSelected {
+  background: var(--neon-blue);
+  border-color: var(--neon-blue);
+  box-shadow: 0 0 12px var(--neon-blue-glow);
+}
+
+.dayPillSelected .pillDayName,
+.dayPillSelected .pillDayNum {
+  color: #0a0a1a;
+}
+
+.pillDayName {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  margin-bottom: 4px;
 }
 
-/* ── Days list ── */
-.dayList {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.pillDayNum {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-primary);
+  line-height: 1;
 }
 
-.dayBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dayHeader {
+/* ── Day title ── */
+.dayTitle {
   font-family: var(--font-mono);
   font-size: 0.68rem;
   color: var(--neon-pink);
@@ -62,6 +101,38 @@
   border-bottom: 1px solid rgba(255, 45, 149, 0.2);
 }
 
+/* ── Room list ── */
+.roomList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.roomSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roomHeader {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--neon-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.emptyRoom {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ── Session list ── */
 .sessionList {
   display: flex;
   flex-direction: column;
