@@ -26,6 +26,7 @@ export function AttendancePage() {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [markingUserId, setMarkingUserId] = useState<number | null>(null);
 
   async function load() {
     try {
@@ -57,12 +58,16 @@ export function AttendancePage() {
   }
 
   async function handleMark(userId: number, status: AttendanceStatus) {
+    if (markingUserId !== null) return;
+    setMarkingUserId(userId);
     try {
       await attendanceApi.mark(sid, userId, status);
       showToast('Отмечено!', 'success');
       await load();
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    } finally {
+      setMarkingUserId(null);
     }
   }
 
@@ -81,7 +86,7 @@ export function AttendancePage() {
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
-      <BackButton to={`/gm/sessions/${sid}`} />
+      <BackButton />
       <h1>Посещаемость</h1>
 
       <div className={`card ${styles.sessionInfo}`}>
@@ -128,17 +133,20 @@ export function AttendancePage() {
               </div>
 
               <div className={styles.attActions}>
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    className={`btn btn-sm ${
-                      att.status === opt.value ? 'btn-primary' : 'btn-secondary'
-                    }`}
-                    onClick={() => handleMark(att.user_id, opt.value)}
-                  >
-                    {opt.icon} {opt.label}
-                  </button>
-                ))}
+                {STATUS_OPTIONS.map((opt) => {
+                  const isActive = att.status === opt.value;
+                  const isDisabled = isActive || markingUserId !== null;
+                  return (
+                    <button
+                      key={opt.value}
+                      className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => handleMark(att.user_id, opt.value)}
+                      disabled={isDisabled}
+                    >
+                      {markingUserId === att.user_id && !isActive ? '...' : `${opt.icon} ${opt.label}`}
+                    </button>
+                  );
+                })}
               </div>
 
               {att.status === 'attended' && !att.unpaid && (
@@ -146,6 +154,7 @@ export function AttendancePage() {
                   className="btn btn-danger btn-sm"
                   style={{ marginTop: '8px' }}
                   onClick={() => handleRefund(att.user_id)}
+                  disabled={markingUserId !== null}
                 >
                   ↩ Вернуть кредит
                 </button>

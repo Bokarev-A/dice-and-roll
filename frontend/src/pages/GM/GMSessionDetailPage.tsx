@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { sessionsApi } from '../../api/sessions';
 import { signupsApi } from '../../api/signups';
 import { roomsApi } from '../../api/rooms';
-import type { GameSession, Signup, Room } from '../../types/index';
+import { attendanceApi } from '../../api/attendance';
+import type { GameSession, Signup, Room, Attendance } from '../../types/index';
 import { useUIStore } from '../../store/useUIStore';
-import { SessionBadge, SignupBadge } from '../../components/UI/Badge';
+import { SessionBadge, SignupBadge, AttendanceBadge } from '../../components/UI/Badge';
 import { Loader } from '../../components/UI/Loader';
 import { Empty } from '../../components/UI/Empty';
 import { BackButton } from '../../components/UI/BackButton';
@@ -22,6 +23,7 @@ export function GMSessionDetailPage() {
   const [session, setSession] = useState<GameSession | null>(null);
   const [signups, setSignups] = useState<Signup[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Edit form state
@@ -35,14 +37,16 @@ export function GMSessionDetailPage() {
 
   async function load() {
     try {
-      const [s, sg, rm] = await Promise.all([
+      const [s, sg, rm, att] = await Promise.all([
         sessionsApi.getById(sessionId),
         signupsApi.listBySession(sessionId),
         roomsApi.list(),
+        attendanceApi.listBySession(sessionId),
       ]);
       setSession(s);
       setSignups(sg);
       setRooms(rm);
+      setAttendances(att);
     } catch {
       // silent
     } finally {
@@ -137,6 +141,8 @@ export function GMSessionDetailPage() {
   if (!session) return <Empty icon="❌" title="Сессия не найдена" />;
 
   const activeSignups = signups.filter((s) => s.status !== 'cancelled');
+  const attendanceMap = new Map(attendances.map((a) => [a.user_id, a]));
+  const hasAttendance = attendances.length > 0;
 
   return (
     <div className={`animate-fade-in ${styles.page} ${sessionStyles.sessionPage}`}>
@@ -214,11 +220,19 @@ export function GMSessionDetailPage() {
             <textarea
               className="input"
               value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
+              onChange={(e) => setEditDescription(e.target.value.slice(0, 500))}
               placeholder="Кратко о чём будет сессия..."
               rows={2}
-              maxLength={200}
+              maxLength={500}
             />
+            <div style={{
+              textAlign: 'right',
+              fontSize: '0.78rem',
+              marginTop: '2px',
+              color: editDescription.length >= 450 ? 'var(--color-danger, #ff4444)' : 'var(--text-muted)',
+            }}>
+              {editDescription.length}/500
+            </div>
           </div>
 
           <div className={styles.formField}>
@@ -285,7 +299,10 @@ export function GMSessionDetailPage() {
                 <span className={styles.signupUser}>
                   {signup.user_name || `Игрок #${signup.user_id}`}
                 </span>
-                <SignupBadge status={signup.status} />
+                {hasAttendance && attendanceMap.has(signup.user_id)
+                  ? <AttendanceBadge status={attendanceMap.get(signup.user_id)!.status} />
+                  : <SignupBadge status={signup.status} />
+                }
               </div>
 
               {signup.status === 'waitlist' && signup.waitlist_position && (

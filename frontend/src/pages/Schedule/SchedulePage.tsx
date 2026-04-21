@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { calendarApi } from '../../api/calendar';
 import { roomsApi } from '../../api/rooms';
@@ -76,8 +76,22 @@ export function SchedulePage() {
   const [loading, setLoading] = useState(true);
 
   const today = getTodayISO();
-  // stripStart — первый день в ленте; изначально сегодня минус 2
-  const [stripStart, setStripStart] = useState<string>(() => addDays(getTodayISO(), -2));
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  // 45-day scrollable strip: today−22 … today+22
+  const stripDays = Array.from({ length: 45 }, (_, i) => addDays(today, i - 22));
+
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip) return;
+    const idx = stripDays.indexOf(selectedDate);
+    if (idx === -1) return;
+    const pill = strip.children[idx] as HTMLElement | undefined;
+    const behavior = isFirstRender.current ? 'instant' : 'smooth';
+    isFirstRender.current = false;
+    pill?.scrollIntoView({ behavior, inline: 'center', block: 'nearest' });
+  }, [selectedDate]);
 
   useEffect(() => {
     roomsApi.list().then((data: Room[]) => setRooms(data.filter((r) => r.is_active)));
@@ -91,37 +105,32 @@ export function SchedulePage() {
       .finally(() => setLoading(false));
   }, [selectedDate]);
 
-  const stripDays = [0, 1, 2, 3, 4].map((n) => addDays(stripStart, n));
   const dayEntries = entries.filter((e) => isSameDay(e.starts_at, selectedDate));
 
   return (
     <div className={`animate-fade-in ${styles.page}`}>
       <h1>Расписание</h1>
 
-      <div className={styles.stripRow}>
-        <button className={styles.stripArrow} onClick={() => setStripStart((s) => addDays(s, -1))}>←</button>
-        <div className={styles.dayStrip}>
-          {stripDays.map((date) => {
-            const { dayName, dayNum } = formatStripDay(date);
-            const isSelected = date === selectedDate;
-            const isToday = date === today;
-            return (
-              <button
-                key={date}
-                className={[
-                  styles.dayPill,
-                  isSelected ? styles.dayPillSelected : '',
-                  isToday && !isSelected ? styles.dayPillToday : '',
-                ].join(' ')}
-                onClick={() => setSelectedDate(date)}
-              >
-                <span className={styles.pillDayName}>{dayName}</span>
-                <span className={styles.pillDayNum}>{dayNum}</span>
-              </button>
-            );
-          })}
-        </div>
-        <button className={styles.stripArrow} onClick={() => setStripStart((s) => addDays(s, 1))}>→</button>
+      <div ref={stripRef} className={styles.dayStrip}>
+        {stripDays.map((date) => {
+          const { dayName, dayNum } = formatStripDay(date);
+          const isSelected = date === selectedDate;
+          const isToday = date === today;
+          return (
+            <button
+              key={date}
+              className={[
+                styles.dayPill,
+                isSelected ? styles.dayPillSelected : '',
+                isToday && !isSelected ? styles.dayPillToday : '',
+              ].join(' ')}
+              onClick={() => setSelectedDate(date)}
+            >
+              <span className={styles.pillDayName}>{dayName}</span>
+              <span className={styles.pillDayNum}>{dayNum}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className={styles.dayTitle}>{formatDayHeader(selectedDate)}</div>

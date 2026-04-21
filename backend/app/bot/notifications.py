@@ -415,8 +415,8 @@ async def notify_player_confirm_attendance(
     )
     reply_markup = {
         "inline_keyboard": [[
-            {"text": "✅ Буду",            "callback_data": f"pl_ok_{signup_id}"},
-            {"text": "❌ Отменить запись", "callback_data": f"pl_no_{signup_id}"},
+            {"text": "✅ Буду",      "callback_data": f"pl_ok_{signup_id}"},
+            {"text": "❌ Не смогу", "callback_data": f"pl_why_{signup_id}"},
         ]]
     }
     await send_message(telegram_id, text, reply_markup=reply_markup)
@@ -427,16 +427,23 @@ async def notify_gm_player_response(
     player_name: str,
     campaign_title: str,
     action: str,
+    reason: str = "",
 ):
     if action == "confirmed":
         text = (
             f"✅ <b>{player_name}</b> подтвердил(а) явку\n"
             f"Кампания: {campaign_title}"
         )
+    elif action == "waitlisted":
+        text = (
+            f"⏳ <b>{player_name}</b> подтвердил(а) явку (лист ожидания)\n"
+            f"Кампания: {campaign_title}"
+        )
     else:
+        reason_str = f"\nПричина: {reason}" if reason else ""
         text = (
             f"❌ <b>{player_name}</b> отменил(а) запись\n"
-            f"Кампания: {campaign_title}"
+            f"Кампания: {campaign_title}{reason_str}"
         )
     await send_message(gm_telegram_id, text)
 
@@ -472,7 +479,7 @@ async def notify_player_6h_reminder(
     signup_id: int,
 ):
     text = (
-        f"⏰ <b>Сессия через 6 часов!</b>\n\n"
+        f"🎲 <b>Игра уже сегодня!</b>\n\n"
         f"Кампания: {campaign_title}\n"
         f"Время: {starts_at_str}\n"
         f"Комната: {room_name}\n\n"
@@ -480,10 +487,20 @@ async def notify_player_6h_reminder(
     )
     reply_markup = {
         "inline_keyboard": [[
-            {"text": "✅ Буду",            "callback_data": f"pl_ok_{signup_id}"},
-            {"text": "❌ Отменить запись", "callback_data": f"pl_no_{signup_id}"},
+            {"text": "✅ Буду",      "callback_data": f"pl_ok_{signup_id}"},
+            {"text": "❌ Не смогу", "callback_data": f"pl_why_{signup_id}"},
         ]]
     }
+    await send_message(telegram_id, text, reply_markup=reply_markup)
+
+
+async def ask_player_cancel_reason(telegram_id: int, signup_id: int) -> None:
+    """Ask player to type a custom cancellation reason via force_reply."""
+    text = (
+        f"✏️ Напишите причину отмены — ответьте на это сообщение\n\n"
+        f"#signup_{signup_id}"
+    )
+    reply_markup = {"force_reply": True, "selective": True}
     await send_message(telegram_id, text, reply_markup=reply_markup)
 
 
@@ -499,6 +516,26 @@ async def notify_credit_deducted(
         f"Кредит успешно списан."
     )
     await send_message(telegram_id, text)
+
+
+async def notify_gm_session_done(
+    gm_telegram_id: int,
+    campaign_title: str,
+    mini_app_url: str,
+):
+    text = (
+        f"✅ <b>Явка отмечена!</b>\n\n"
+        f"Кампания: {campaign_title}\n\n"
+        f"Хотите запланировать следующую сессию?"
+    )
+    reply_markup = None
+    if mini_app_url and mini_app_url.startswith("http"):
+        reply_markup = {
+            "inline_keyboard": [[
+                {"text": "📅 Запланировать следующую сессию", "web_app": {"url": mini_app_url}},
+            ]]
+        }
+    await send_message(gm_telegram_id, text, reply_markup=reply_markup)
 
 
 async def notify_gm_reschedule_redirect(
@@ -520,7 +557,7 @@ async def register_webhook() -> None:
 
     payload = {
         "url": settings.WEBHOOK_URL,
-        "allowed_updates": ["callback_query"],
+        "allowed_updates": ["callback_query", "message"],
     }
     if settings.WEBHOOK_SECRET:
         payload["secret_token"] = settings.WEBHOOK_SECRET

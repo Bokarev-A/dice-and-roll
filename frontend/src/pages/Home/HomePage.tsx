@@ -153,7 +153,7 @@ export function HomePage() {
                   <div
                     key={entry.session_id}
                     className={`card ${styles.sessionCard}`}
-                    onClick={() => navigate(`/gm/sessions/${entry.session_id}`)}
+                    onClick={() => navigate(entry.is_gm ? `/gm/sessions/${entry.session_id}` : `/sessions/${entry.session_id}`)}
                   >
                     <div className={styles.sessionTop}>
                       <div className={styles.sessionDate}>

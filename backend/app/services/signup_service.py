@@ -1,11 +1,13 @@
 from datetime import datetime, timezone
 
+import pytz
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.signup import Signup, SignupStatus
 from app.models.session import GameSession, SessionStatus
 from app.models.campaign import Campaign, CampaignMember, CampaignType, CampaignMemberStatus
+from app.models.user import User
 
 
 async def auto_signup_members(db: AsyncSession, session: GameSession):
@@ -344,8 +346,12 @@ async def auto_signup_new_member(
     """
     Auto-enroll a newly approved campaign member into all upcoming sessions
     of the campaign they don't already have a signup for.
+    Sends an attendance confirmation notification for each session enrolled.
     Called when a pending member is approved.
     """
+    from app.bot import notifications as bot
+    from app.config import settings
+
     now = datetime.now(timezone.utc)
 
     result = await db.execute(
@@ -359,6 +365,8 @@ async def auto_signup_new_member(
     )
     sessions = result.scalars().all()
 
+    new_signups: list[tuple[Signup, GameSession]] = []
+
     for session in sessions:
         existing = await db.execute(
             select(Signup).where(
@@ -371,11 +379,33 @@ async def auto_signup_new_member(
         )
         if existing.scalar_one_or_none():
             continue
-        db.add(Signup(
+        signup = Signup(
             session_id=session.id,
             user_id=user_id,
             status=SignupStatus.pending,
-        ))
+        )
+        db.add(signup)
+        new_signups.append((signup, session))
+
+    await db.flush()
+
+    if new_signups:
+        user = await db.get(User, user_id)
+        campaign = await db.get(Campaign, campaign_id)
+        tz = pytz.timezone(settings.CLUB_TIMEZONE)
+
+        for signup, session in new_signups:
+            await db.refresh(signup)
+            room_name = session.room.name if session.room else ""
+            starts_str = session.starts_at.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+            if user and campaign:
+                await bot.notify_player_confirm_attendance(
+                    user.telegram_id,
+                    campaign.title,
+                    starts_str,
+                    room_name,
+                    signup.id,
+                )
 
     await db.commit()
 

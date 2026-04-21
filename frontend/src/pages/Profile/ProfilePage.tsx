@@ -22,7 +22,7 @@ export function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const isGM = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
-  const [tab, setTab] = useState<Tab>('credits');
+  const [tab, setTab] = useState<Tab>(isGM ? 'sessions' : 'credits');
   const [balance, setBalance] = useState<CreditBalance | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [history, setHistory] = useState<LedgerEntry[]>([]);

@@ -14,6 +14,7 @@ export function OrdersPage() {
   const showToast = useUIStore((s) => s.showToast);
   const [tab, setTab] = useState<Tab>('pending');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -26,9 +27,14 @@ export function OrdersPage() {
       if (tab === 'pending') {
         const data = await ordersApi.listPending();
         setOrders(data);
+        setPendingCount(data.length);
       } else {
-        const data = await ordersApi.listAll();
-        setOrders(data);
+        const [all, pending] = await Promise.all([
+          ordersApi.listAll(),
+          ordersApi.listPending(),
+        ]);
+        setOrders(all);
+        setPendingCount(pending.length);
       }
     } catch {
       // silent
@@ -88,7 +94,7 @@ export function OrdersPage() {
           className={`${styles.tab} ${tab === 'pending' ? styles.tabActive : ''}`}
           onClick={() => setTab('pending')}
         >
-          Ожидают ({tab === 'pending' ? orders.length : '...'})
+          Ожидают ({pendingCount !== null ? pendingCount : '...'})
         </button>
         <button
           className={`${styles.tab} ${tab === 'all' ? styles.tabActive : ''}`}

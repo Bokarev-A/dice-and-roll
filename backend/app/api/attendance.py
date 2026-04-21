@@ -177,6 +177,13 @@ async def update_attendance(
         if owner and owner.role == UserRole.private_gm:
             await debit_rental_for_session(db, campaign.owner_gm_user_id, session_id)
 
+    # Notify GM that all players are marked — suggest scheduling next session
+    if session_completed and campaign:
+        gm = await db.get(User, campaign.owner_gm_user_id)
+        if gm:
+            campaign_url = f"{settings.MINI_APP_URL}/gm/campaigns/{campaign.id}"
+            await notify.notify_gm_session_done(gm.telegram_id, campaign.title, campaign_url)
+
     # Notify player about attendance result
     import pytz
     from app.services.notification_service import get_admin_telegram_ids

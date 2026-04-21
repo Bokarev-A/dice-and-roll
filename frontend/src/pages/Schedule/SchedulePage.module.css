@@ -5,36 +5,20 @@
 }
 
 /* ── Day strip ── */
-.stripRow {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stripArrow {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--neon-blue);
-  font-size: 1rem;
-  padding: 6px 8px;
-  cursor: pointer;
-  transition: var(--transition);
-  line-height: 1;
-  flex-shrink: 0;
-  width: 34px;
-}
-
-.stripArrow:hover {
-  border-color: var(--neon-blue);
-  box-shadow: 0 0 10px var(--neon-blue-glow);
-}
-
 .dayStrip {
   display: flex;
   flex-direction: row;
   gap: 6px;
-  flex: 1;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px;
+  /* hide scrollbar */
+  scrollbar-width: none;
+}
+
+.dayStrip::-webkit-scrollbar {
+  display: none;
 }
 
 .dayPill {
@@ -48,8 +32,9 @@
   background: transparent;
   cursor: pointer;
   transition: var(--transition);
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
+  width: 48px;
+  scroll-snap-align: center;
 }
 
 .dayPill:hover {

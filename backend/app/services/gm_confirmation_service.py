@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 import pytz
-from sqlalchemy import select, and_
+from sqlalchemy import select, update, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -24,13 +24,16 @@ async def send_gm_48h_notifications(db: AsyncSession) -> None:
     """
     Send 48h-ahead confirmation requests to GMs.
     Called by the scheduler every 15 minutes.
+    Uses an atomic UPDATE...RETURNING to prevent duplicate sends when two
+    processes run concurrently (e.g. during a rolling deploy).
     """
     now = datetime.now(timezone.utc)
     target = now + timedelta(hours=48)
     window = timedelta(minutes=15)
 
     result = await db.execute(
-        select(GameSession).where(
+        update(GameSession)
+        .where(
             and_(
                 GameSession.starts_at >= target - window,
                 GameSession.starts_at <= target + window,
@@ -38,14 +41,21 @@ async def send_gm_48h_notifications(db: AsyncSession) -> None:
                 GameSession.gm_48h_notified_at.is_(None),
             )
         )
+        .values(gm_48h_notified_at=now)
+        .returning(GameSession.id)
     )
-    sessions = list(result.scalars().all())
-    if not sessions:
+    session_ids = [row[0] for row in result.fetchall()]
+    await db.commit()
+
+    if not session_ids:
         return
 
     tz = pytz.timezone(settings.CLUB_TIMEZONE)
 
-    for session in sessions:
+    for session_id in session_ids:
+        session = await db.get(GameSession, session_id)
+        if not session:
+            continue
         campaign = await db.get(Campaign, session.campaign_id)
         if not campaign:
             continue
@@ -61,12 +71,10 @@ async def send_gm_48h_notifications(db: AsyncSession) -> None:
             campaign.title,
             starts_str,
             room_name,
-            session.id,
+            session_id,
         )
-        session.gm_48h_notified_at = now
 
-    await db.commit()
-    logger.info("Sent 48h GM confirmation for %d sessions", len(sessions))
+    logger.info("Sent 48h GM confirmation for %d sessions", len(session_ids))
 
 
 # ── Shared helpers ───────────────────────────────────────────────
@@ -165,7 +173,9 @@ async def handle_gm_cancel(db: AsyncSession, session_id: int, from_user: dict) -
 
 
 async def handle_player_ok(db: AsyncSession, signup_id: int, from_user: dict) -> None:
-    """Player confirmed attendance — notify GM."""
+    """Player confirmed attendance — confirm pending signup if needed, then notify GM."""
+    from app.services.signup_service import confirm_pending_signup
+
     signup = await db.get(Signup, signup_id)
     if not signup or signup.status == SignupStatus.cancelled:
         return
@@ -174,6 +184,9 @@ async def handle_player_ok(db: AsyncSession, signup_id: int, from_user: dict) ->
     if not player or player.telegram_id != from_user["id"]:
         logger.warning("Webhook: sender %d is not owner of signup %d", from_user["id"], signup_id)
         return
+
+    if signup.status == SignupStatus.pending:
+        await confirm_pending_signup(db, signup)
 
     session = await db.get(GameSession, signup.session_id)
     if not session:
@@ -186,20 +199,23 @@ async def handle_player_ok(db: AsyncSession, signup_id: int, from_user: dict) ->
         return
 
     player_name = f"{player.first_name} {player.last_name or ''}".strip()
-    await bot.notify_gm_player_response(gm.telegram_id, player_name, campaign.title, "confirmed")
+    action = "confirmed" if signup.status == SignupStatus.confirmed else "waitlisted"
+    await bot.notify_gm_player_response(gm.telegram_id, player_name, campaign.title, action)
 
 
 async def send_gm_6h_notifications(db: AsyncSession) -> None:
     """
     Send 6h-ahead confirmation requests to GMs.
     Called by the scheduler every 15 minutes.
+    Uses an atomic UPDATE...RETURNING to prevent duplicate sends on concurrent runs.
     """
     now = datetime.now(timezone.utc)
     target = now + timedelta(hours=6)
     window = timedelta(minutes=15)
 
     result = await db.execute(
-        select(GameSession).where(
+        update(GameSession)
+        .where(
             and_(
                 GameSession.starts_at >= target - window,
                 GameSession.starts_at <= target + window,
@@ -207,14 +223,21 @@ async def send_gm_6h_notifications(db: AsyncSession) -> None:
                 GameSession.gm_6h_notified_at.is_(None),
             )
         )
+        .values(gm_6h_notified_at=now)
+        .returning(GameSession.id)
     )
-    sessions = list(result.scalars().all())
-    if not sessions:
+    session_ids = [row[0] for row in result.fetchall()]
+    await db.commit()
+
+    if not session_ids:
         return
 
     tz = pytz.timezone(settings.CLUB_TIMEZONE)
 
-    for session in sessions:
+    for session_id in session_ids:
+        session = await db.get(GameSession, session_id)
+        if not session:
+            continue
         campaign = await db.get(Campaign, session.campaign_id)
         if not campaign:
             continue
@@ -230,12 +253,10 @@ async def send_gm_6h_notifications(db: AsyncSession) -> None:
             campaign.title,
             starts_str,
             room_name,
-            session.id,
+            session_id,
         )
-        session.gm_6h_notified_at = now
 
-    await db.commit()
-    logger.info("Sent 6h GM confirmation for %d sessions", len(sessions))
+    logger.info("Sent 6h GM confirmation for %d sessions", len(session_ids))
 
 
 async def handle_gm_6h_confirm(db: AsyncSession, session_id: int, from_user: dict) -> None:
@@ -300,7 +321,9 @@ async def handle_gm_6h_cancel(db: AsyncSession, session_id: int, from_user: dict
     logger.info("GM cancelled session %d via 6h webhook", session_id)
 
 
-async def handle_player_cancel(db: AsyncSession, signup_id: int, from_user: dict) -> None:
+async def handle_player_cancel(
+    db: AsyncSession, signup_id: int, from_user: dict, reason: str = ""
+) -> None:
     """Player cancelled signup — cancel in DB and notify GM."""
     signup = await db.get(Signup, signup_id)
     if not signup:
@@ -322,7 +345,7 @@ async def handle_player_cancel(db: AsyncSession, signup_id: int, from_user: dict
     if gm:
         player_name = f"{player.first_name} {player.last_name or ''}".strip()
         await bot.notify_gm_player_response(
-            gm.telegram_id, player_name, campaign.title, "cancelled"
+            gm.telegram_id, player_name, campaign.title, "cancelled", reason=reason
         )
     logger.info("Player %d cancelled signup %d via webhook", player.id, signup_id)
 

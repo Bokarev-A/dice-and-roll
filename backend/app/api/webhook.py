@@ -5,7 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.bot.notifications import _tg_client
+import re
+
+from app.bot.notifications import _tg_client, ask_player_cancel_reason
 from app.services.gm_confirmation_service import (
     handle_gm_cancel,
     handle_gm_confirm,
@@ -21,6 +23,13 @@ from app.services.gm_confirmation_service import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["bot-webhook"])
+
+CANCEL_REASONS: dict[str, str] = {
+    "1": "Болею 🤒",
+    "2": "Занят/занята 💼",
+    "3": "Уезжаю ✈️",
+    "0": "Без причины",
+}
 
 BOT_API_URL = f"{settings.TELEGRAM_BOT_API_URL}/bot{settings.BOT_TOKEN}"
 
@@ -58,6 +67,72 @@ async def remove_inline_keyboard(chat_id: int, message_id: int) -> None:
         pass  # best-effort
 
 
+async def set_keyboard_status(
+    chat_id: int, message_id: int, status_text: str, signup_id: int
+) -> None:
+    """Replace inline keyboard with status row + change button."""
+    try:
+        async with _tg_client(timeout=5) as client:
+            await client.post(
+                f"{BOT_API_URL}/editMessageReplyMarkup",
+                json={
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "reply_markup": {
+                        "inline_keyboard": [
+                            [{"text": status_text, "callback_data": "noop"}],
+                            [{"text": "✏️ Изменить", "callback_data": f"pl_chg_{signup_id}"}],
+                        ]
+                    },
+                },
+            )
+    except Exception:
+        pass  # best-effort
+
+
+async def restore_player_keyboard(chat_id: int, message_id: int, signup_id: int) -> None:
+    """Restore the original attendance confirmation keyboard."""
+    try:
+        async with _tg_client(timeout=5) as client:
+            await client.post(
+                f"{BOT_API_URL}/editMessageReplyMarkup",
+                json={
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "reply_markup": {
+                        "inline_keyboard": [[
+                            {"text": "✅ Буду",      "callback_data": f"pl_ok_{signup_id}"},
+                            {"text": "❌ Не смогу", "callback_data": f"pl_why_{signup_id}"},
+                        ]]
+                    },
+                },
+            )
+    except Exception:
+        pass  # best-effort
+
+
+async def show_cancel_reasons_keyboard(chat_id: int, message_id: int, signup_id: int) -> None:
+    """Show reason selection keyboard when player wants to cancel."""
+    rows = [
+        [{"text": label, "callback_data": f"pl_rsn_{signup_id}_{key}"}]
+        for key, label in CANCEL_REASONS.items()
+    ]
+    rows.append([{"text": "✏️ Другая причина", "callback_data": f"pl_other_{signup_id}"}])
+    rows.append([{"text": "↩ Назад", "callback_data": f"pl_chg_{signup_id}"}])
+    try:
+        async with _tg_client(timeout=5) as client:
+            await client.post(
+                f"{BOT_API_URL}/editMessageReplyMarkup",
+                json={
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "reply_markup": {"inline_keyboard": rows},
+                },
+            )
+    except Exception:
+        pass  # best-effort
+
+
 @router.post("/webhook")
 async def telegram_webhook(
     request: Request,
@@ -69,6 +144,22 @@ async def telegram_webhook(
         raise HTTPException(status_code=403)
 
     body = await request.json()
+
+    # Handle player typing a custom cancellation reason (reply to force_reply message)
+    incoming_message = body.get("message")
+    if incoming_message and incoming_message.get("reply_to_message"):
+        reply_to_text = incoming_message["reply_to_message"].get("text", "")
+        match = re.search(r"#signup_(\d+)", reply_to_text)
+        if match:
+            signup_id = int(match.group(1))
+            reason = incoming_message.get("text", "").strip()
+            from_user = incoming_message["from"]
+            try:
+                await handle_player_cancel(db, signup_id, from_user, reason=reason)
+            except Exception:
+                logger.exception("Error handling cancel-with-reason for signup %d", signup_id)
+        return {"ok": True}
+
     callback = body.get("callback_query")
     if not callback:
         return {"ok": True}
@@ -81,6 +172,7 @@ async def telegram_webhook(
 
     toast_text = ""
     show_alert = False
+    keyboard_already_updated = False
 
     try:
         if data.startswith("gm_ok_"):
@@ -101,11 +193,43 @@ async def telegram_webhook(
             toast_text = "❌ Сессия отменена, игроки уведомлены"
             show_alert = True
         elif data.startswith("pl_ok_"):
-            await handle_player_ok(db, int(data[6:]), from_user)
+            signup_id = int(data[6:])
+            await handle_player_ok(db, signup_id, from_user)
             toast_text = "✅ Явка подтверждена!"
-        elif data.startswith("pl_no_"):
-            await handle_player_cancel(db, int(data[6:]), from_user)
+            if chat_id and message_id:
+                await set_keyboard_status(chat_id, message_id, "✅ Явка подтверждена", signup_id)
+                keyboard_already_updated = True
+        elif data.startswith("pl_why_"):
+            signup_id = int(data[7:])
+            toast_text = "Укажите причину"
+            if chat_id and message_id:
+                await show_cancel_reasons_keyboard(chat_id, message_id, signup_id)
+                keyboard_already_updated = True
+        elif data.startswith("pl_rsn_"):
+            parts = data[7:].rsplit("_", 1)
+            signup_id, reason_key = int(parts[0]), parts[1]
+            reason = CANCEL_REASONS.get(reason_key, "")
+            await handle_player_cancel(db, signup_id, from_user, reason=reason)
             toast_text = "❌ Запись отменена"
+            if chat_id and message_id:
+                label = f"❌ Запись отменена" + (f" — {reason}" if reason else "")
+                await set_keyboard_status(chat_id, message_id, label, signup_id)
+                keyboard_already_updated = True
+        elif data.startswith("pl_other_"):
+            signup_id = int(data[9:])
+            toast_text = "Напишите причину в ответ на следующее сообщение"
+            if chat_id and message_id:
+                await set_keyboard_status(chat_id, message_id, "⏳ Ожидаем вашу причину...", signup_id)
+                keyboard_already_updated = True
+            await ask_player_cancel_reason(from_user["id"], signup_id)
+        elif data.startswith("pl_chg_"):
+            signup_id = int(data[7:])
+            toast_text = "Выберите действие"
+            if chat_id and message_id:
+                await restore_player_keyboard(chat_id, message_id, signup_id)
+                keyboard_already_updated = True
+        elif data == "noop":
+            pass  # status button tap — do nothing
         elif data.startswith("adm_gc_ok_"):
             await handle_admin_gc_approve(db, int(data[10:]), from_user)
             toast_text = "✅ Мастерский кредит списан"
@@ -121,7 +245,7 @@ async def telegram_webhook(
 
     await answer_callback_query(callback["id"], toast_text, show_alert)
 
-    if chat_id and message_id and toast_text:
+    if chat_id and message_id and toast_text and not keyboard_already_updated:
         await remove_inline_keyboard(chat_id, message_id)
 
     return {"ok": True}

@@ -221,11 +221,11 @@ export function CampaignPage() {
   const isGMAdmin = isOwnerGM || user?.role === 'admin';
 
   const upcomingSessions = sessions.filter(
-    (s) => s.status !== 'canceled' && s.status !== 'done' && new Date(s.starts_at) > new Date()
+    (s) => s.status !== 'canceled' && s.status !== 'done' && new Date(s.ends_at) > new Date()
   );
 
   const pastSessions = sessions.filter(
-    (s) => s.status === 'done' || s.status === 'canceled' || new Date(s.starts_at) <= new Date()
+    (s) => s.status === 'done' || s.status === 'canceled' || new Date(s.ends_at) <= new Date()
   ).sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
   return (
@@ -440,11 +440,19 @@ export function CampaignPage() {
             <textarea
               className="input"
               value={sessionDescription}
-              onChange={(e) => setSessionDescription(e.target.value)}
+              onChange={(e) => setSessionDescription(e.target.value.slice(0, 500))}
               placeholder="Кратко о чём будет сессия..."
               rows={2}
-              maxLength={200}
+              maxLength={500}
             />
+            <div style={{
+              textAlign: 'right',
+              fontSize: '0.78rem',
+              marginTop: '2px',
+              color: sessionDescription.length >= 450 ? 'var(--color-danger, #ff4444)' : 'var(--text-muted)',
+            }}>
+              {sessionDescription.length}/500
+            </div>
           </div>
 
           <div className={styles.formField}>
@@ -486,7 +494,7 @@ export function CampaignPage() {
               <SessionCard
                 session={s}
                 showCampaign={false}
-                onClick={() => navigate(isGMAdmin ? `/gm/sessions/${s.id}` : `/sessions/${s.id}`)}
+                onClick={() => navigate(isOwnerGM ? `/gm/sessions/${s.id}` : `/sessions/${s.id}`)}
               />
               {!isGMAdmin && isMember && (() => {
                 const alreadySignedUp = mySignups.includes(s.id);
