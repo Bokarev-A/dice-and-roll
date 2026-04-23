@@ -185,8 +185,10 @@ async def handle_player_ok(db: AsyncSession, signup_id: int, from_user: dict) ->
         logger.warning("Webhook: sender %d is not owner of signup %d", from_user["id"], signup_id)
         return
 
-    if signup.status == SignupStatus.pending:
-        await confirm_pending_signup(db, signup)
+    if signup.status not in (SignupStatus.pending,):
+        return  # idempotent: already confirmed/waitlisted, GM was already notified
+
+    await confirm_pending_signup(db, signup)
 
     session = await db.get(GameSession, signup.session_id)
     if not session:

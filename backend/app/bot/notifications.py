@@ -195,15 +195,22 @@ async def notify_new_session(
     campaign_title: str,
     starts_at: str,
     room: str,
+    signup_id: int,
 ):
     text = (
         f"🎲 <b>Новая сессия</b>\n\n"
         f"Кампания: {campaign_title}\n"
         f"Время: {starts_at}\n"
         f"Комната: {room}\n\n"
-        f"Запишитесь в приложении!"
+        f"Планируете прийти?"
     )
-    await send_message(telegram_id, text)
+    reply_markup = {
+        "inline_keyboard": [[
+            {"text": "✅ Приду",      "callback_data": f"pl_ok_{signup_id}"},
+            {"text": "❌ Не приду",   "callback_data": f"pl_why_{signup_id}"},
+        ]]
+    }
+    await send_message(telegram_id, text, reply_markup=reply_markup)
 
 
 # ── Signup notifications ─────────────────────────────────────────

@@ -90,6 +90,26 @@ async def set_keyboard_status(
         pass  # best-effort
 
 
+async def set_gm_keyboard_status(chat_id: int, message_id: int, status_text: str) -> None:
+    """Replace GM inline keyboard with a single non-clickable status row."""
+    try:
+        async with _tg_client(timeout=5) as client:
+            await client.post(
+                f"{BOT_API_URL}/editMessageReplyMarkup",
+                json={
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "reply_markup": {
+                        "inline_keyboard": [
+                            [{"text": status_text, "callback_data": "noop"}],
+                        ]
+                    },
+                },
+            )
+    except Exception:
+        pass  # best-effort
+
+
 async def restore_player_keyboard(chat_id: int, message_id: int, signup_id: int) -> None:
     """Restore the original attendance confirmation keyboard."""
     try:
@@ -178,20 +198,35 @@ async def telegram_webhook(
         if data.startswith("gm_ok_"):
             await handle_gm_confirm(db, int(data[6:]), from_user)
             toast_text = "✅ Сессия подтверждена, игроки уведомлены"
+            if chat_id and message_id:
+                await set_gm_keyboard_status(chat_id, message_id, "✅ Игра подтверждена")
+                keyboard_already_updated = True
         elif data.startswith("gm_mv_"):
             await handle_gm_move(db, int(data[6:]), from_user)
             toast_text = "📅 Откройте приложение для переноса"
+            if chat_id and message_id:
+                await set_gm_keyboard_status(chat_id, message_id, "📅 Перенос запрошен")
+                keyboard_already_updated = True
         elif data.startswith("gm_no_"):
             await handle_gm_cancel(db, int(data[6:]), from_user)
             toast_text = "❌ Сессия отменена, игроки уведомлены"
             show_alert = True
+            if chat_id and message_id:
+                await set_gm_keyboard_status(chat_id, message_id, "❌ Игра отменена")
+                keyboard_already_updated = True
         elif data.startswith("gm6_ok_"):
             await handle_gm_6h_confirm(db, int(data[7:]), from_user)
             toast_text = "✅ Игроки получили напоминание"
+            if chat_id and message_id:
+                await set_gm_keyboard_status(chat_id, message_id, "✅ Игра подтверждена")
+                keyboard_already_updated = True
         elif data.startswith("gm6_no_"):
             await handle_gm_6h_cancel(db, int(data[7:]), from_user)
             toast_text = "❌ Сессия отменена, игроки уведомлены"
             show_alert = True
+            if chat_id and message_id:
+                await set_gm_keyboard_status(chat_id, message_id, "❌ Игра отменена")
+                keyboard_already_updated = True
         elif data.startswith("pl_ok_"):
             signup_id = int(data[6:])
             await handle_player_ok(db, signup_id, from_user)

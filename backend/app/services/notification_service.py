@@ -83,40 +83,37 @@ async def notify_session_participants(
 async def notify_campaign_members_new_session(
     db: AsyncSession, session: GameSession
 ):
-    """Notify all campaign members about a new session."""
-    from app.models.campaign import CampaignMember
-
+    """Notify all campaign members about a new session with attendance confirmation buttons."""
     campaign = await db.get(Campaign, session.campaign_id)
     if not campaign:
         return
 
     result = await db.execute(
-        select(CampaignMember).where(
-            CampaignMember.campaign_id == session.campaign_id
+        select(Signup).where(
+            and_(
+                Signup.session_id == session.id,
+                Signup.status == SignupStatus.pending,
+            )
         )
     )
-    members = result.scalars().all()
+    signups = result.scalars().all()
 
     from app.config import settings
     import pytz
 
     tz = pytz.timezone(settings.CLUB_TIMEZONE)
-    starts_str = session.starts_at.astimezone(tz).strftime(
-        "%d.%m.%Y %H:%M"
-    )
+    starts_str = session.starts_at.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+    room_name = session.room.name if session.room else ""
 
-    room_name = ""
-    if session.room:
-        room_name = session.room.name
-
-    for member in members:
-        user = await db.get(User, member.user_id)
+    for signup in signups:
+        user = await db.get(User, signup.user_id)
         if user:
             await bot.notify_new_session(
                 user.telegram_id,
                 campaign.title,
                 starts_str,
                 room_name,
+                signup.id,
             )
 
 
