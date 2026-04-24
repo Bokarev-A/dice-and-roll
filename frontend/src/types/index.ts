@@ -143,6 +143,7 @@ export type Campaign = {
   member_count: number;
   capacity: number;
   created_at: string;
+  next_session_at?: string | null;
 };
 
 export type CampaignMemberStatus = 'pending' | 'active';

@@ -37,6 +37,7 @@ class CampaignRead(BaseModel):
     member_count: int = 0
     capacity: int = 5
     created_at: datetime
+    next_session_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

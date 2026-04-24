@@ -29,6 +29,7 @@ export function CampaignPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
   // Edit campaign form (GM owner only)
   const [showEdit, setShowEdit] = useState(false);
@@ -51,6 +52,16 @@ export function CampaignPage() {
   const hasPendingApp = members.some((m) => m.user_id === user?.id && m.status === 'pending');
   const isOwnerGM = campaign?.owner_gm_user_id === user?.id;
   const isGMOrAdmin = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
+
+  function handleShare() {
+    const botUsername = import.meta.env.VITE_BOT_USERNAME;
+    const link = `https://t.me/${botUsername}?startapp=campaign_${campaignId}`;
+    navigator.clipboard.writeText(link).then(() => {
+      showToast('Ссылка скопирована!', 'success');
+    }).catch(() => {
+      showToast('Не удалось скопировать ссылку', 'error');
+    });
+  }
 
   async function load() {
     try {
@@ -98,6 +109,19 @@ export function CampaignPage() {
       await campaignsApi.join(campaignId);
       showToast('Вы присоединились!', 'success');
       await load();
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleArchive() {
+    setActionLoading(true);
+    try {
+      await campaignsApi.update(campaignId, { status: 'archived' });
+      showToast('Кампания завершена', 'info');
+      navigate('/catalog');
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
     } finally {
@@ -238,12 +262,20 @@ export function CampaignPage() {
             color={campaign.type === 'campaign' ? 'purple' : 'blue'}
           />
           {isOwnerGM && (
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={showEdit ? () => setShowEdit(false) : openEdit}
-            >
-              {showEdit ? '✕ Закрыть' : '✎ Изменить'}
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleShare}
+              >
+                Поделиться
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={showEdit ? () => setShowEdit(false) : openEdit}
+              >
+                {showEdit ? '✕ Закрыть' : '✎ Изменить'}
+              </button>
+            </div>
           )}
         </div>
         <h1 className={styles.title}>{campaign.title}</h1>
@@ -572,6 +604,45 @@ export function CampaignPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1 }}
                   onClick={() => setShowLeaveConfirm(false)}
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Archive — owner GM only */}
+      {isOwnerGM && campaign.status === 'active' && (
+        <>
+          <hr className="divider" />
+          {!showArchiveConfirm ? (
+            <button
+              className={`btn btn-block ${styles.leaveBtnMuted}`}
+              onClick={() => setShowArchiveConfirm(true)}
+              disabled={actionLoading}
+            >
+              Завершить {campaign.type === 'campaign' ? 'кампанию' : 'ваншот'}
+            </button>
+          ) : (
+            <div className={styles.leaveConfirm}>
+              <p className={styles.leaveConfirmText}>
+                Завершить {campaign.type === 'campaign' ? 'кампанию' : 'ваншот'}? Она будет скрыта из каталога.
+              </p>
+              <div className={styles.leaveConfirmButtons}>
+                <button
+                  className="btn btn-danger"
+                  style={{ flex: 1 }}
+                  onClick={handleArchive}
+                  disabled={actionLoading}
+                >
+                  Да, завершить
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setShowArchiveConfirm(false)}
                 >
                   Отмена
                 </button>

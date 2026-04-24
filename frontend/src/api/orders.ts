@@ -29,4 +29,7 @@ export const ordersApi = {
 
   reject: (orderId: number, reason: string) =>
     api.post<Order>(`/orders/${orderId}/reject`, { reason }).then(r => r.data),
+
+  delete: (orderId: number) =>
+    api.delete(`/orders/${orderId}`),
 };

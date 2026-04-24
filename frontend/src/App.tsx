@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './store/useAuthStore';
 import { useTelegram } from './hooks/useTelegram';
@@ -36,6 +36,16 @@ function AppRoutes() {
   const user = useAuthStore((s) => s.user);
   const isGM = user?.role === 'gm' || user?.role === 'private_gm' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
+  const navigate = useNavigate();
+  const { startParam } = useTelegram();
+
+  useEffect(() => {
+    if (!startParam) return;
+    const match = startParam.match(/^campaign_(\d+)$/);
+    if (match) {
+      navigate(`/campaign/${match[1]}`, { replace: true });
+    }
+  }, [startParam]);
 
   return (
     <Routes>

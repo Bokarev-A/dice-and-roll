@@ -17,6 +17,7 @@ class OrderStatus(str, enum.Enum):
     rejected = "rejected"
     expired = "expired"
     cancelled = "cancelled"
+    deleted = "deleted"
 
 
 class Order(Base):

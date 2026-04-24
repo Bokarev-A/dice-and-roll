@@ -18,6 +18,7 @@ export function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [rejectId, setRejectId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [actionOrderId, setActionOrderId] = useState<number | null>(null);
   const actionInProgress = useRef(false);
 
@@ -76,6 +77,23 @@ export function OrdersPage() {
       showToast('Оплата отклонена', 'info');
       setRejectId(null);
       setRejectReason('');
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка', 'error');
+    } finally {
+      actionInProgress.current = false;
+      setActionOrderId(null);
+      await load();
+    }
+  }
+
+  async function handleDelete(orderId: number) {
+    if (actionInProgress.current) return;
+    actionInProgress.current = true;
+    setActionOrderId(orderId);
+    try {
+      await ordersApi.delete(orderId);
+      showToast('Заказ удалён', 'info');
+      setDeleteId(null);
     } catch (err: any) {
       showToast(err.response?.data?.detail || 'Ошибка', 'error');
     } finally {
@@ -188,6 +206,39 @@ export function OrdersPage() {
               {order.reject_reason && (
                 <div className={styles.rejectNote}>
                   Причина: {order.reject_reason}
+                </div>
+              )}
+
+              {tab === 'all' && deleteId !== order.id && (
+                <button
+                  className="btn btn-danger btn-sm"
+                  style={{ alignSelf: 'flex-end' }}
+                  onClick={() => setDeleteId(order.id)}
+                  disabled={actionOrderId !== null}
+                >
+                  Удалить
+                </button>
+              )}
+
+              {tab === 'all' && deleteId === order.id && (
+                <div className={styles.deleteConfirm}>
+                  <span className={styles.deleteConfirmText}>Удалить заказ #{order.id}?</span>
+                  <div className={styles.deleteConfirmActions}>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDelete(order.id)}
+                      disabled={actionOrderId !== null}
+                    >
+                      {actionOrderId === order.id ? '...' : 'Да, удалить'}
+                    </button>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => setDeleteId(null)}
+                      disabled={actionOrderId !== null}
+                    >
+                      Отмена
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

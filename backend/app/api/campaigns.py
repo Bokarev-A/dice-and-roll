@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, and_, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +9,7 @@ from app.models.user import User, UserRole
 from app.models.campaign import (
     Campaign, CampaignMember, CampaignStatus, CampaignVisibility, CampaignMemberStatus, CampaignFunding,
 )
+from app.models.session import GameSession, SessionStatus
 from app.schemas.campaign import (
     CampaignCreate, CampaignUpdate, CampaignRead, CampaignMemberRead,
 )
@@ -20,7 +23,7 @@ router = APIRouter(prefix="/campaigns", tags=["campaigns"])
 async def campaigns_with_counts(
     db: AsyncSession, where_clause=None
 ) -> list[CampaignRead]:
-    """Load campaigns with member_count via subquery (no lazy loading)."""
+    """Load campaigns with member_count and next_session_at via subqueries."""
     member_count_sub = (
         select(
             CampaignMember.campaign_id,
@@ -31,12 +34,30 @@ async def campaigns_with_counts(
         .subquery()
     )
 
-    query = (
-        select(Campaign, sa_func.coalesce(member_count_sub.c.cnt, 0))
-        .outerjoin(
-            member_count_sub,
-            Campaign.id == member_count_sub.c.campaign_id,
+    now = datetime.now(timezone.utc)
+    next_session_sub = (
+        select(
+            GameSession.campaign_id,
+            sa_func.min(GameSession.starts_at).label("next_at"),
         )
+        .where(
+            and_(
+                GameSession.starts_at > now,
+                GameSession.status != SessionStatus.canceled,
+            )
+        )
+        .group_by(GameSession.campaign_id)
+        .subquery()
+    )
+
+    query = (
+        select(
+            Campaign,
+            sa_func.coalesce(member_count_sub.c.cnt, 0),
+            next_session_sub.c.next_at,
+        )
+        .outerjoin(member_count_sub, Campaign.id == member_count_sub.c.campaign_id)
+        .outerjoin(next_session_sub, Campaign.id == next_session_sub.c.campaign_id)
     )
 
     if where_clause is not None:
@@ -61,8 +82,9 @@ async def campaigns_with_counts(
             member_count=cnt,
             capacity=camp.capacity,
             created_at=camp.created_at,
+            next_session_at=next_at,
         )
-        for camp, cnt in rows
+        for camp, cnt, next_at in rows
     ]
 
 

@@ -134,14 +134,20 @@ export function CatalogPage() {
           <Empty icon="🎲" title="Нет доступных ваншотов" subtitle="Загляните позже!" />
         ) : (
           <div className={styles.list}>
-            {oneshots.map((c) => (
-              <CampaignCard
-                key={c.id}
-                campaign={c}
-                role={getRoleForCampaign(c)}
-                onClick={() => navigate(`/campaign/${c.id}`)}
-              />
-            ))}
+            {[...oneshots]
+              .sort((a, b) => {
+                const aDate = a.next_session_at ? new Date(a.next_session_at).getTime() : Infinity;
+                const bDate = b.next_session_at ? new Date(b.next_session_at).getTime() : Infinity;
+                return aDate - bDate;
+              })
+              .map((c) => (
+                <CampaignCard
+                  key={c.id}
+                  campaign={c}
+                  role={getRoleForCampaign(c)}
+                  onClick={() => navigate(`/campaign/${c.id}`)}
+                />
+              ))}
           </div>
         )
       ) : tab === 'campaigns' ? (
@@ -149,14 +155,21 @@ export function CatalogPage() {
           <Empty icon="📜" title="Нет активных кампаний" />
         ) : (
           <div className={styles.list}>
-            {campaigns.map((c) => (
-              <CampaignCard
-                key={c.id}
-                campaign={c}
-                role={getRoleForCampaign(c)}
-                onClick={() => navigate(`/campaign/${c.id}`)}
-              />
-            ))}
+            {[...campaigns]
+              .sort((a, b) => {
+                const aFree = a.capacity - a.member_count > 0 ? 0 : 1;
+                const bFree = b.capacity - b.member_count > 0 ? 0 : 1;
+                if (aFree !== bFree) return aFree - bFree;
+                return a.title.localeCompare(b.title, 'ru');
+              })
+              .map((c) => (
+                <CampaignCard
+                  key={c.id}
+                  campaign={c}
+                  role={getRoleForCampaign(c)}
+                  onClick={() => navigate(`/campaign/${c.id}`)}
+                />
+              ))}
           </div>
         )
       ) : (
@@ -255,14 +268,20 @@ export function CatalogPage() {
             />
           ) : (
             <div className={styles.list}>
-              {mineCampaigns.map((c) => (
-                <CampaignCard
-                  key={c.id}
-                  campaign={c}
-                  role={getRoleForCampaign(c)}
-                  onClick={() => navigate(`/campaign/${c.id}`)}
-                />
-              ))}
+              {[...mineCampaigns]
+                .sort((a, b) => {
+                  const aArchived = a.status === 'archived' ? 1 : 0;
+                  const bArchived = b.status === 'archived' ? 1 : 0;
+                  return aArchived - bArchived;
+                })
+                .map((c) => (
+                  <CampaignCard
+                    key={c.id}
+                    campaign={c}
+                    role={getRoleForCampaign(c)}
+                    onClick={() => navigate(`/campaign/${c.id}`)}
+                  />
+                ))}
             </div>
           )}
         </>

@@ -9,8 +9,9 @@ interface CampaignCardProps {
 }
 
 export function CampaignCard({ campaign, role, onClick }: CampaignCardProps) {
+  const isArchived = campaign.status === 'archived';
   return (
-    <div className={`card ${styles.campaign}`} onClick={onClick}>
+    <div className={`card ${styles.campaign} ${isArchived ? styles.archived : ''}`} onClick={onClick}>
       <div className={styles.header}>
         <div className={styles.badges}>
           <Badge
@@ -19,6 +20,7 @@ export function CampaignCard({ campaign, role, onClick }: CampaignCardProps) {
           />
           {role === 'gm' && <Badge text="ГМ" color="pink" />}
           {role === 'player' && <Badge text="Игрок" color="green" />}
+          {isArchived && <Badge text="Завершено" color="orange" />}
         </div>
         <span className={styles.members}>👥 {campaign.member_count}</span>
       </div>

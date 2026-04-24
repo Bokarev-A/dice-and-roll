@@ -13,6 +13,7 @@ interface TelegramWebApp {
       username?: string;
       photo_url?: string;
     };
+    start_param?: string;
   };
   MainButton: {
     text: string;
@@ -60,11 +61,13 @@ export function useTelegram() {
 
   const initData = tg?.initData || '';
   const user = tg?.initDataUnsafe?.user;
+  const startParam = tg?.initDataUnsafe?.start_param;
 
   return {
     tg,
     initData,
     user,
+    startParam,
     isAvailable: !!tg,
   };
 }

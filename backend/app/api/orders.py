@@ -204,7 +204,12 @@ async def list_all_orders(
     current_user: User = Depends(require_admin),
 ):
     """List all orders with optional status filter. Admin only."""
-    query = select(Order).options(selectinload(Order.user)).order_by(Order.created_at.desc())
+    query = (
+        select(Order)
+        .options(selectinload(Order.user))
+        .where(Order.status != OrderStatus.deleted)
+        .order_by(Order.created_at.desc())
+    )
     if status_filter:
         query = query.where(Order.status == status_filter)
 
@@ -248,6 +253,23 @@ async def confirm_order_payment(
         )
 
     return order
+
+
+@router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_order(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Admin soft-deletes an order (sets status to deleted)."""
+    order = await db.get(Order, order_id)
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found",
+        )
+    order.status = OrderStatus.deleted
+    await db.commit()
 
 
 @router.post("/{order_id}/reject", response_model=OrderRead)
